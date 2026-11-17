@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Product, OrderStatus, ProductVariant } from '../types';
+import { processProductImage, ProcessedImageResult } from '../utils/imageProcessor';
 import { 
   LayoutDashboard, 
   Package, 
@@ -19,7 +20,18 @@ import {
   ExternalLink,
   Shield,
   Smartphone,
-  Check
+  Check,
+  Lock,
+  Unlock,
+  Key,
+  LogOut,
+  Camera,
+  Upload,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const AdminCMS: React.FC = () => {
