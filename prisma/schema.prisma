@@ -1,0 +1,270 @@
+// Prisma Schema for Gramer Hat (গ্রামের হাট)
+// Section 7 of PRD
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  admin
+  moderator
+  customer
+}
+
+enum Status {
+  active
+  inactive
+}
+
+enum ProductStatus {
+  active
+  draft
+  out_of_stock
+}
+
+enum PaymentMethod {
+  cod
+  bkash_send_money
+  bkash_gateway
+  nagad_send_money
+  nagad_gateway
+  bank_transfer
+}
+
+enum PaymentStatus {
+  pending
+  verified
+  paid
+  failed
+  refunded
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+enum DiscountType {
+  percentage
+  fixed
+}
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  phone      String   @unique
+  password   String
+  role       Role     @default(customer)
+  status     Status   @default(active)
+  orders     Order[]
+  statusChanges OrderStatusHistory[]
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id                  String           @id @default(uuid())
+  title_bn            String
+  title_en            String
+  slug                String           @unique
+  sku                 String           @unique
+  description_bn      String           @db.Text
+  description_en      String           @db.Text
+  short_description_bn String          @db.Text
+  short_description_en String          @db.Text
+  regular_price       Decimal          @db.Decimal(10, 2)
+  sale_price          Decimal?         @db.Decimal(10, 2)
+  stock_quantity      Int
+  low_stock_threshold Int              @default(10)
+  category_id         String
+  category            Category         @relation(fields: [category_id], references: [id])
+  status              ProductStatus    @default(active)
+  is_featured         Boolean          @default(false)
+  is_bestseller       Boolean          @default(false)
+  is_preorder         Boolean          @default(false)
+  meta_title_bn       String?
+  meta_title_en       String?
+  meta_description_bn String?          @db.Text
+  meta_description_en String?          @db.Text
+  variants            ProductVariant[]
+  images              ProductImage[]
+  order_items         OrderItem[]
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id             String      @id @default(uuid())
+  product_id     String
+  product        Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  variant_name   String      // e.g. "250g", "500g", "1kg", "5kg"
+  price          Decimal     @db.Decimal(10, 2)
+  stock_quantity Int
+  sku            String
+  order_items    OrderItem[]
+
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id         String   @id @default(uuid())
+  product_id String
+  product    Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  image_url  String
+  alt_text_bn String?
+  alt_text_en String?
+  is_main    Boolean  @default(false)
+  sort_order Int      @default(0)
+
+  @@map("product_images")
+}
+
+model Category {
+  id             String     @id @default(uuid())
+  name_bn        String
+  name_en        String
+  slug           String     @unique
+  description_bn String?    @db.Text
+  description_en String?    @db.Text
+  image_url      String?
+  parent_id      String?
+  parent         Category?  @relation("CategoryHierarchy", fields: [parent_id], references: [id])
+  children       Category[] @relation("CategoryHierarchy")
+  sort_order     Int        @default(0)
+  status         Status     @default(active)
+  products       Product[]
+
+  @@map("categories")
+}
+
+model Order {
+  id                     String               @id @default(uuid())
+  order_number           String               @unique // e.g., "GH-2026-001234"
+  customer_id            String?
+  customer               User?                @relation(fields: [customer_id], references: [id])
+  guest_name             String
+  guest_phone            String
+  guest_email            String?
+  shipping_address       Json                 // {name, phone, address_line_1, address_line_2, city, area, postal_code}
+  subtotal               Decimal              @db.Decimal(10, 2)
+  shipping_cost          Decimal              @db.Decimal(10, 2)
+  discount               Decimal              @default(0) @db.Decimal(10, 2)
+  tax                    Decimal              @default(0) @db.Decimal(10, 2)
+  total                  Decimal              @db.Decimal(10, 2)
+  payment_method         PaymentMethod
+  payment_status         PaymentStatus        @default(pending)
+  payment_transaction_id String?
+  payment_proof_url      String?
+  order_status           OrderStatus          @default(pending)
+  tracking_number        String?
+  admin_notes            String?              @db.Text
+  items                  OrderItem[]
+  status_history         OrderStatusHistory[]
+  created_at             DateTime             @default(now())
+  updated_at             DateTime             @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String          @id @default(uuid())
+  order_id    String
+  order       Order           @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product_id  String
+  product     Product         @relation(fields: [product_id], references: [id])
+  variant_id  String?
+  variant     ProductVariant? @relation(fields: [variant_id], references: [id])
+  quantity    Int
+  unit_price  Decimal         @db.Decimal(10, 2)
+  total_price Decimal         @db.Decimal(10, 2)
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String      @id @default(uuid())
+  order_id   String
+  order      Order       @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  status     OrderStatus
+  changed_by String
+  user       User        @relation(fields: [changed_by], references: [id])
+  notes      String?     @db.Text
+  created_at DateTime    @default(now())
+
+  @@map("order_status_history")
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  title_bn    String
+  title_en    String
+  subtitle_bn String?
+  subtitle_en String?
+  image_url   String
+  cta_text_bn String?
+  cta_text_en String?
+  cta_link    String?
+  sort_order  Int      @default(0)
+  status      Status   @default(active)
+
+  @@map("banners")
+}
+
+model BlogPost {
+  id                  String    @id @default(uuid())
+  title_bn            String
+  title_en            String
+  slug                String    @unique
+  content_bn          String    @db.Text
+  content_en          String    @db.Text
+  featured_image_url  String
+  category            String
+  tags                String[]
+  publish_date        DateTime  @default(now())
+  status              String    @default("published")
+  meta_title_bn       String?
+  meta_title_en       String?
+  meta_description_bn String?   @db.Text
+  meta_description_en String?   @db.Text
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@map("blog_posts")
+}
+
+model SiteSetting {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  value      String   @db.Text
+  updated_at DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Coupon {
+  id               String       @id @default(uuid())
+  code             String       @unique
+  discount_type    DiscountType
+  discount_value   Decimal      @db.Decimal(10, 2)
+  min_order_amount Decimal?     @db.Decimal(10, 2)
+  max_uses         Int?
+  used_count       Int          @default(0)
+  valid_from       DateTime     @default(now())
+  valid_until      DateTime
+  status           Status       @default(active)
+
+  @@map("coupons")
+}

@@ -1,0 +1,21 @@
+{
+  "short_name": "GramerHat",
+  "name": "গ্রামের হাট (Gramer Hat) - Agro E-Commerce",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#2D5F3F",
+  "theme_color": "#2D5F3F",
+  "display": "standalone",
+  "orientation": "portrait"
+}
