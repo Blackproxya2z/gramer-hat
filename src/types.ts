@@ -109,6 +109,13 @@ export interface Order {
   }[];
 }
 
+export interface AdminAuth {
+  isAuthenticated: boolean;
+  role: 'admin' | 'moderator' | null;
+  userName: string;
+  loginTime: number | null;
+}
+
 export interface SiteSettings {
   site_name_bn: string;
   site_name_en: string;
@@ -128,4 +135,6 @@ export interface SiteSettings {
   developer_name: string;
   developer_whatsapp: string;
   developer_whatsapp_url: string;
+  admin_pin: string;
+  moderator_pin: string;
 }

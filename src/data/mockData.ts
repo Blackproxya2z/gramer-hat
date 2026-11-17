@@ -276,6 +276,8 @@ export const initialSiteSettings: SiteSettings = {
   developer_name: 'SINI IT',
   developer_whatsapp: '+8801647236359',
   developer_whatsapp_url: 'https://wa.me/8801647236359',
+  admin_pin: 'admin123',
+  moderator_pin: 'mod123',
 };
 
 export const initialOrders: Order[] = [

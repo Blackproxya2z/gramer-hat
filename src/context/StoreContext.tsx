@@ -7,7 +7,8 @@ import {
   ProductVariant, 
   Order, 
   OrderStatus, 
-  SiteSettings 
+  SiteSettings,
+  AdminAuth
 } from '../types';
 import { 
   initialCategories, 
@@ -69,6 +70,10 @@ interface StoreContextType {
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
 
+  adminAuth: AdminAuth;
+  loginAdmin: (pin: string, requestedRole: 'admin' | 'moderator') => { success: boolean; message: string };
+  logoutAdmin: () => void;
+
   toastMessage: string | null;
   showToast: (msg: string) => void;
 }
@@ -111,6 +116,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
     const saved = localStorage.getItem('gh_settings');
     return saved ? JSON.parse(saved) : initialSiteSettings;
+  });
+
+  const [adminAuth, setAdminAuth] = useState<AdminAuth>(() => {
+    try {
+      const saved = sessionStorage.getItem('gh_admin_auth');
+      if (saved) {
+        const parsed: AdminAuth = JSON.parse(saved);
+        if (parsed.loginTime && Date.now() - parsed.loginTime < 60 * 60 * 1000) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { isAuthenticated: false, role: null, userName: '', loginTime: null };
   });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -321,6 +341,56 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(language === 'bn' ? 'পণ্য মুছে ফেলা হয়েছে!' : 'Product deleted!');
   };
 
+  const loginAdmin = (pin: string, requestedRole: 'admin' | 'moderator') => {
+    const cleanPin = pin.trim();
+    const effectiveAdminPin = siteSettings.admin_pin || 'admin123';
+    const effectiveModPin = siteSettings.moderator_pin || 'mod123';
+
+    let isAuthorized = false;
+    const assignedRole: 'admin' | 'moderator' = requestedRole;
+
+    if (requestedRole === 'admin') {
+      if (cleanPin === effectiveAdminPin) {
+        isAuthorized = true;
+      }
+    } else {
+      if (cleanPin === effectiveModPin || cleanPin === effectiveAdminPin) {
+        isAuthorized = true;
+      }
+    }
+
+    if (isAuthorized) {
+      const newAuth: AdminAuth = {
+        isAuthenticated: true,
+        role: assignedRole,
+        userName: assignedRole === 'admin' ? 'Super Admin' : 'Content Moderator',
+        loginTime: Date.now(),
+      };
+      setAdminAuth(newAuth);
+      sessionStorage.setItem('gh_admin_auth', JSON.stringify(newAuth));
+      showToast(
+        language === 'bn'
+          ? `স্বাগতম! ${newAuth.userName} হিসেবে লগইন সফল হয়েছে।`
+          : `Welcome! Logged in as ${newAuth.userName}.`
+      );
+      return { success: true, message: 'Authorized' };
+    }
+
+    return {
+      success: false,
+      message:
+        language === 'bn'
+          ? 'দুঃখিত, সিকিউরিটি পিন সঠিক নয়! অনুগ্রহ করে সঠিক পিন কোড দিন।'
+          : 'Incorrect Security PIN code! Access denied.',
+    };
+  };
+
+  const logoutAdmin = () => {
+    setAdminAuth({ isAuthenticated: false, role: null, userName: '', loginTime: null });
+    sessionStorage.removeItem('gh_admin_auth');
+    showToast(language === 'bn' ? 'সিএমএস অ্যাডমিন প্যানেল থেকে লগআউট সম্পন্ন।' : 'Logged out of CMS Admin.');
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -367,6 +437,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addNewProduct,
         updateProduct,
         deleteProduct,
+        adminAuth,
+        loginAdmin,
+        logoutAdmin,
         toastMessage,
         showToast,
       }}
