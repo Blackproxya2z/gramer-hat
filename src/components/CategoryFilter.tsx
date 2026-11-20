@@ -25,8 +25,14 @@ export const CategoryFilter: React.FC = () => {
             return (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(isSelected ? 'all' : cat.id)}
-                className="flex flex-col items-center gap-3 group focus:outline-none"
+                onClick={() => {
+                  setActiveCategory(isSelected ? 'all' : cat.id);
+                  const el = document.getElementById('products-catalog');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="flex flex-col items-center gap-3 group focus:outline-none cursor-pointer"
               >
                 <div className={`relative w-[110px] h-[110px] rounded-[55px] overflow-hidden shadow-md group-hover:shadow-xl transition-all duration-300 border-2 ${
                   isSelected ? 'border-[#2D5F3F] ring-4 ring-[#2D5F3F]/20 scale-105' : 'border-white'

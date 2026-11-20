@@ -31,15 +31,21 @@ const MainApp: React.FC = () => {
     isMobileFrame, 
     setIsMobileFrame, 
     products, 
+    categories,
     activeCategory, 
     searchQuery,
+    setSearchQuery,
     setActiveCategory,
     toastMessage,
-    showToast
+    showToast,
+    language,
+    t
   } = useStore();
 
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high'>('featured');
   const [newsletterEmail, setNewsletterEmail] = useState('');
+
+  const currentCategory = categories.find((c) => c.id === activeCategory);
 
   // Filter products by active category and search query
   let filteredProducts = products.filter((p) => {
@@ -93,39 +99,127 @@ const MainApp: React.FC = () => {
             <TrustBadges />
             <CategoryFilter />
 
-            {/* Bestsellers Section (Node 2:10 in Figma) */}
-            <section className="bg-white py-12 sm:py-16 border-b border-[#e5e7eb]">
+            {/* Dynamic Product Catalog Section (Responsive to Category Menu & Search) */}
+            <section id="products-catalog" className="bg-white py-12 sm:py-16 border-b border-[#e5e7eb] scroll-mt-24">
               <div className="max-w-7xl mx-auto px-4 sm:px-8">
                 
-                {/* Heading (Node 2:187 in Figma) */}
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+                {/* Heading Row */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                   <div>
                     <span className="font-sans font-bold text-[10px] tracking-[1.7px] text-[#2D5F3F] uppercase block mb-1.5">
-                      YOUR NEXT PANTRY FAVOURITES
+                      {activeCategory === 'all'
+                        ? (searchQuery ? `SEARCH RESULTS FOR "${searchQuery.toUpperCase()}"` : 'YOUR NEXT PANTRY FAVOURITES · খাঁটি খাদ্য সম্ভার')
+                        : `HONEST ROOTS · ${currentCategory?.name_en.toUpperCase() || 'COLLECTION'}`}
                     </span>
                     <h2 className="font-display font-medium text-3xl sm:text-[36px] text-[#1e4029] leading-tight">
-                      Good food. Great beginnings.
+                      {activeCategory === 'all'
+                        ? (searchQuery ? `Search Results` : 'Good food. Great beginnings.')
+                        : `${currentCategory?.name_en} (${currentCategory?.name_bn})`}
                     </h2>
                     <p className="font-sans font-normal text-sm sm:text-[15px] text-[#6b7280] mt-1">
-                      Everyday essentials, with the goodness you grew up with.
+                      {activeCategory === 'all'
+                        ? t('প্রতিদিনের সেরা ও স্বাস্থ্যকর কৃষিপণ্য, সরাসরি কৃষকের মাঠ থেকে।', 'Everyday essentials, with the goodness you grew up with.')
+                        : (language === 'bn' 
+                            ? `${currentCategory?.name_bn} ক্যাটাগরিতে মোট ${filteredProducts.length}টি খাঁটি পণ্য পাওয়া গেছে।`
+                            : `Showing ${filteredProducts.length} authentic products in this collection.`)}
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => setActiveCategory('all')}
-                    className="font-sans font-semibold text-[14px] text-[#2D5F3F] hover:underline flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
-                  >
-                    <span>Shop all products</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  {/* Actions: Sort selector and reset button */}
+                  <div className="flex flex-wrap items-center gap-3 shrink-0 self-start sm:self-auto">
+                    {/* Sort selector */}
+                    <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-[#fafafa] border border-gray-200 px-3 py-1.5 rounded-lg shadow-xs">
+                      <span className="font-bold text-gray-500">{t('সর্ট:', 'Sort:')}</span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="bg-transparent font-medium text-gray-800 focus:outline-none cursor-pointer"
+                      >
+                        <option value="featured">{t('জনপ্রিয় পণ্য (Featured)', 'Featured')}</option>
+                        <option value="price-low">{t('দাম: কম থেকে বেশি', 'Price: Low to High')}</option>
+                        <option value="price-high">{t('দাম: বেশি থেকে কম', 'Price: High to Low')}</option>
+                      </select>
+                    </div>
+
+                    {(activeCategory !== 'all' || searchQuery) && (
+                      <button
+                        onClick={() => {
+                          setActiveCategory('all');
+                          setSearchQuery('');
+                        }}
+                        className="font-sans font-semibold text-xs text-[#2D5F3F] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <span>{t('সকল পণ্য দেখুন ✕', 'Show all products ✕')}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Product Grid (Node 2:195 in Figma) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {bestSellers.map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
+                {/* Category Pills Bar inside the catalog */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+                  <button
+                    onClick={() => setActiveCategory('all')}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      activeCategory === 'all'
+                        ? 'bg-[#2D5F3F] text-white shadow-sm'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {t('সকল পণ্য', 'All Products')} ({products.length})
+                  </button>
+
+                  {categories.map((cat) => {
+                    const isCurrent = activeCategory === cat.id;
+                    const catCount = products.filter((p) => p.category_id === cat.id).length;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setActiveCategory(cat.id)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isCurrent
+                            ? 'bg-[#2D5F3F] text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <span>{cat.icon}</span>
+                        <span>{language === 'bn' ? cat.name_bn : cat.name_en}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                          isCurrent ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {catCount}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Product Grid */}
+                {filteredProducts.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {filteredProducts.map((p) => (
+                      <ProductCard key={p.id} product={p} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-[#f7f4ec]/50 rounded-2xl border border-dashed border-gray-300 space-y-3">
+                    <p className="text-4xl">🌾</p>
+                    <h3 className="text-base font-bold text-gray-800">
+                      {t('কোনো পণ্য পাওয়া যায়নি', 'No products found')}
+                    </h3>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                      {t('আপনার ফিল্টার অথবা সার্চের সাথে কোনো পণ্যের মিল পাওয়া যায়নি। অনুগ্রহ করে ফিল্টার পরিবর্তন করুন।', 'No agro products matched your current category or search criteria.')}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setActiveCategory('all');
+                        setSearchQuery('');
+                      }}
+                      className="px-4 py-2 bg-[#2D5F3F] text-white text-xs font-bold rounded-lg hover:bg-[#1e4029] transition-colors cursor-pointer"
+                    >
+                      {t('সকল পণ্য দেখুন', 'View All Products')}
+                    </button>
+                  </div>
+                )}
 
               </div>
             </section>
