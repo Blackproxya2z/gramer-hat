@@ -14,16 +14,6 @@ import { OrderTrackingModal } from './components/OrderTrackingModal';
 import { AdminCMS } from './components/AdminCMS';
 import { Footer } from './components/Footer';
 import { WhatsAppButton } from './components/WhatsAppButton';
-import { 
-  ArrowRight, 
-  Truck, 
-  CreditCard, 
-  Package, 
-  MessageCircle, 
-  CheckCircle2, 
-  Smartphone, 
-  X 
-} from 'lucide-react';
 
 const MainApp: React.FC = () => {
   const { 
@@ -81,8 +71,8 @@ const MainApp: React.FC = () => {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-[#1e4029] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold animate-bounce border border-[#F4A261]/30">
-          <CheckCircle2 className="w-4 h-4 text-[#F4A261] shrink-0" />
+        <div className="fixed top-5 right-5 z-50 bg-[#1e4029] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-[#F4A261]/30">
+          <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
           <span>{toastMessage}</span>
         </div>
       )}
@@ -100,12 +90,20 @@ const MainApp: React.FC = () => {
             <CategoryFilter />
 
             {/* Dynamic Product Catalog Section (Responsive to Category Menu & Search) */}
-            <section id="products-catalog" className="bg-white py-12 sm:py-16 border-b border-[#e5e7eb] scroll-mt-24">
-              <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <section id="products-catalog" className="relative bg-white py-12 sm:py-16 border-b border-[#e5e7eb] scroll-mt-24 overflow-hidden">
+              {/* Subtle Animated Agriculture Ambient Glows */}
+              <div className="absolute top-10 right-0 w-80 h-80 rounded-full bg-emerald-600/5 blur-3xl pointer-events-none animate-agro-drift"></div>
+              <div className="absolute bottom-10 left-0 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none animate-agro-drift" style={{ animationDelay: '4s' }}></div>
+
+              <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
                 
                 {/* Heading Row */}
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                   <div>
+                    <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-[#2D5F3F]/10 border border-[#2D5F3F]/20 text-[#2D5F3F] text-[10px] font-sans font-bold tracking-[1.5px] uppercase mb-2 animate-earth-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2D5F3F]"></span>
+                      <span>{t('মাঠ থেকে সরাসরি রসুইঘরে · Seasonal Pure Harvest', 'Pure Farm Direct · Seasonal Harvest')}</span>
+                    </div>
                     <span className="font-sans font-bold text-[10px] tracking-[1.7px] text-[#2D5F3F] uppercase block mb-1.5">
                       {activeCategory === 'all'
                         ? (searchQuery ? `SEARCH RESULTS FOR "${searchQuery.toUpperCase()}"` : 'YOUR NEXT PANTRY FAVOURITES · খাঁটি খাদ্য সম্ভার')
@@ -155,7 +153,7 @@ const MainApp: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Category Pills Bar inside the catalog */}
+                {/* Category Pills Bar inside the catalog (No Emojis) */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
                   <button
                     onClick={() => setActiveCategory('all')}
@@ -181,7 +179,6 @@ const MainApp: React.FC = () => {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        <span>{cat.icon}</span>
                         <span>{language === 'bn' ? cat.name_bn : cat.name_en}</span>
                         <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                           isCurrent ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600'
@@ -202,7 +199,9 @@ const MainApp: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-16 bg-[#f7f4ec]/50 rounded-2xl border border-dashed border-gray-300 space-y-3">
-                    <p className="text-4xl">🌾</p>
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-[#2D5F3F] font-bold text-sm flex items-center justify-center mx-auto">
+                      GH
+                    </div>
                     <h3 className="text-base font-bold text-gray-800">
                       {t('কোনো পণ্য পাওয়া যায়নি', 'No products found')}
                     </h3>
@@ -216,7 +215,7 @@ const MainApp: React.FC = () => {
                       }}
                       className="px-4 py-2 bg-[#2D5F3F] text-white text-xs font-bold rounded-lg hover:bg-[#1e4029] transition-colors cursor-pointer"
                     >
-                      {t('সকল পণ্য দেখুন', 'View All Products')}
+                      {t('সকল পণ্য দেখুন →', 'View All Products →')}
                     </button>
                   </div>
                 )}
@@ -245,11 +244,15 @@ const MainApp: React.FC = () => {
                     </p>
                     <div className="pt-2">
                       <button
-                        onClick={() => setActiveCategory('cat-5')}
-                        className="bg-[#2D5F3F] hover:bg-[#1e4029] text-white font-sans font-semibold text-sm px-6 py-3 rounded-lg inline-flex items-center gap-2 shadow-xs transition-colors"
+                        onClick={() => {
+                          setActiveCategory('cat-5');
+                          const el = document.getElementById('products-catalog');
+                          el?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="bg-[#2D5F3F] hover:bg-[#1e4029] text-white font-sans font-semibold text-sm px-6 py-3 rounded-lg inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
                         <span>Explore jaggery</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <span>→</span>
                       </button>
                     </div>
                   </div>
@@ -323,8 +326,7 @@ const MainApp: React.FC = () => {
                         rel="noopener noreferrer"
                         className="font-sans font-semibold text-sm text-[#2D5F3F] hover:underline inline-flex items-center gap-1.5"
                       >
-                        <span>Get to know Gramer Hat</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <span>Get to know Gramer Hat →</span>
                       </a>
                     </div>
                   </div>
@@ -345,8 +347,8 @@ const MainApp: React.FC = () => {
                   
                   {/* Delivery, made simple */}
                   <div className="p-5 rounded-xl border border-[#e5e7eb] bg-[#fafafa]/50 space-y-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F]">
-                      <Truck className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F] font-mono font-bold text-xs">
+                      01
                     </div>
                     <h4 className="font-sans font-semibold text-[15px] text-[#1A1A1A]">
                       Delivery, made simple
@@ -358,8 +360,8 @@ const MainApp: React.FC = () => {
 
                   {/* Pay your way */}
                   <div className="p-5 rounded-xl border border-[#e5e7eb] bg-[#fafafa]/50 space-y-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F]">
-                      <CreditCard className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F] font-mono font-bold text-xs">
+                      02
                     </div>
                     <h4 className="font-sans font-semibold text-[15px] text-[#1A1A1A]">
                       Pay your way
@@ -371,8 +373,8 @@ const MainApp: React.FC = () => {
 
                   {/* Care in every parcel */}
                   <div className="p-5 rounded-xl border border-[#e5e7eb] bg-[#fafafa]/50 space-y-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F]">
-                      <Package className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F] font-mono font-bold text-xs">
+                      03
                     </div>
                     <h4 className="font-sans font-semibold text-[15px] text-[#1A1A1A]">
                       Care in every parcel
@@ -384,8 +386,8 @@ const MainApp: React.FC = () => {
 
                   {/* A real person to help */}
                   <div className="p-5 rounded-xl border border-[#e5e7eb] bg-[#fafafa]/50 space-y-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F]">
-                      <MessageCircle className="w-4 h-4" />
+                    <div className="w-8 h-8 rounded-full bg-[#2D5F3F]/10 flex items-center justify-center text-[#2D5F3F] font-mono font-bold text-xs">
+                      04
                     </div>
                     <h4 className="font-sans font-semibold text-[15px] text-[#1A1A1A]">
                       A real person to help
@@ -465,15 +467,14 @@ const MainApp: React.FC = () => {
       <div className="min-h-screen bg-gray-900 py-8 px-4 flex flex-col items-center justify-center">
         <div className="mb-4 flex items-center justify-between w-full max-w-[420px] text-white text-xs">
           <div className="flex items-center gap-2">
-            <Smartphone className="w-4 h-4 text-[#25D366]" />
+            <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
             <span className="font-bold">Gramer Hat · Mobile Storefront (390px)</span>
           </div>
           <button
             onClick={() => setIsMobileFrame(false)}
-            className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-white font-semibold transition-colors"
+            className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors cursor-pointer"
           >
-            <X className="w-3.5 h-3.5" />
-            <span>Exit Frame</span>
+            <span>Exit Frame ✕</span>
           </button>
         </div>
 

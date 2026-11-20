@@ -2,19 +2,6 @@ import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { PaymentMethod } from '../types';
 import confetti from 'canvas-confetti';
-import { 
-  X, 
-  CheckCircle2, 
-  Truck, 
-  CreditCard, 
-  Copy, 
-  Check, 
-  ShieldCheck, 
-  MapPin, 
-  Phone, 
-  User, 
-  AlertCircle 
-} from 'lucide-react';
 
 const bangladeshDistricts = [
   'ঢাকা (Dhaka)',
@@ -156,33 +143,31 @@ export const CheckoutModal: React.FC = () => {
       <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden my-6">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-gradient-to-r from-[#2D5F3F] to-[#1e402a] text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-black font-bengali">
-                {t('চেকআউট ও দ্রুত অর্ডার ফর্ম', 'Single-Page Express Checkout')}
-              </h2>
-              <p className="text-xs text-emerald-100">
-                {t('অর্ডার সম্পন্ন করতে নিচের তথ্যগুলো পূরণ করুন', 'Fill in your shipping details to place the order')}
-              </p>
-            </div>
+        <div className="p-4 sm:p-6 bg-[#1e402a] text-white flex items-center justify-between border-b border-emerald-800">
+          <div>
+            <span className="font-mono text-[10px] tracking-wider text-emerald-300 uppercase block font-bold">
+              [ SECURE EXPRESS CHECKOUT ]
+            </span>
+            <h2 className="text-lg sm:text-xl font-black font-bengali">
+              {t('চেকআউট ও দ্রুত অর্ডার ফর্ম', 'Single-Page Express Checkout')}
+            </h2>
+            <p className="text-xs text-emerald-200 mt-0.5">
+              {t('অর্ডার সম্পন্ন করতে নিচের তথ্যগুলো পূরণ করুন', 'Fill in your shipping details to place the order')}
+            </p>
           </div>
 
           <button
             onClick={() => setIsCheckoutOpen(false)}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition-colors cursor-pointer text-sm"
           >
-            <X className="w-5 h-5" />
+            ✕
           </button>
         </div>
 
         {/* Error message banner */}
         {errorMsg && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+          <div className="mx-6 mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2 font-medium">
+            <span className="font-mono font-bold text-red-600">[!]</span>
             <span>{errorMsg}</span>
           </div>
         )}
@@ -195,8 +180,10 @@ export const CheckoutModal: React.FC = () => {
             {/* 1. Contact Information */}
             <div>
               <h3 className="text-sm font-bold text-[#1A1A1A] flex items-center gap-2 mb-3">
-                <User className="w-4 h-4 text-[#2D5F3F]" />
-                <span>{t('১. ক্রেতার তথ্য', '1. Contact Information')}</span>
+                <span className="w-5 h-5 rounded-full bg-[#2D5F3F] text-white font-mono text-[10px] flex items-center justify-center font-bold">
+                  01
+                </span>
+                <span>{t('ক্রেতার তথ্য', 'Contact Information')}</span>
               </h3>
               
               <div className="space-y-3">
@@ -248,8 +235,10 @@ export const CheckoutModal: React.FC = () => {
             {/* 2. Shipping Address */}
             <div className="pt-4 border-t border-gray-100">
               <h3 className="text-sm font-bold text-[#1A1A1A] flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-[#2D5F3F]" />
-                <span>{t('২. ডেলিভারি ঠিকানা', '2. Delivery Address')}</span>
+                <span className="w-5 h-5 rounded-full bg-[#2D5F3F] text-white font-mono text-[10px] flex items-center justify-center font-bold">
+                  02
+                </span>
+                <span>{t('ডেলিভারি ঠিকানা', 'Delivery Address')}</span>
               </h3>
 
               <div className="space-y-3">
@@ -302,8 +291,10 @@ export const CheckoutModal: React.FC = () => {
             {/* 3. Payment Method */}
             <div className="pt-4 border-t border-gray-100">
               <h3 className="text-sm font-bold text-[#1A1A1A] flex items-center gap-2 mb-3">
-                <CreditCard className="w-4 h-4 text-[#2D5F3F]" />
-                <span>{t('৩. পেমেন্ট মেথড নির্বাচন করুন', '3. Select Payment Method')}</span>
+                <span className="w-5 h-5 rounded-full bg-[#2D5F3F] text-white font-mono text-[10px] flex items-center justify-center font-bold">
+                  03
+                </span>
+                <span>{t('পেমেন্ট মেথড নির্বাচন করুন', 'Select Payment Method')}</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -422,10 +413,9 @@ export const CheckoutModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleCopyNumber(siteSettings.bkash_number)}
-                      className="flex items-center gap-1 px-2.5 py-1 bg-[#D12053] text-white rounded-lg text-[11px] font-bold hover:bg-[#b01742]"
+                      className="px-2.5 py-1 bg-[#D12053] text-white rounded-lg text-[11px] font-bold hover:bg-[#b01742] cursor-pointer"
                     >
-                      {copiedNumber ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                      <span>{siteSettings.bkash_number}</span>
+                      <span>{copiedNumber ? t('কপি হয়েছে!', 'Copied!') : `${siteSettings.bkash_number} (কপি)`}</span>
                     </button>
                   </div>
 
@@ -474,10 +464,9 @@ export const CheckoutModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleCopyNumber(siteSettings.nagad_number)}
-                      className="flex items-center gap-1 px-2.5 py-1 bg-[#F7941D] text-white rounded-lg text-[11px] font-bold hover:bg-[#db7e10]"
+                      className="px-2.5 py-1 bg-[#F7941D] text-white rounded-lg text-[11px] font-bold hover:bg-[#db7e10] cursor-pointer"
                     >
-                      {copiedNumber ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                      <span>{siteSettings.nagad_number}</span>
+                      <span>{copiedNumber ? t('কপি হয়েছে!', 'Copied!') : `${siteSettings.nagad_number} (কপি)`}</span>
                     </button>
                   </div>
 
@@ -595,15 +584,12 @@ export const CheckoutModal: React.FC = () => {
                 {isSubmitting ? (
                   <span className="animate-pulse">{t('অর্ডার প্রসেসিং হচ্ছে...', 'Processing Order...')}</span>
                 ) : (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-[#F4A261]" />
-                    <span>{t('অর্ডার নিশ্চিত করুন (Place Order)', 'Confirm & Place Order')}</span>
-                  </>
+                  <span>{t('অর্ডার নিশ্চিত করুন (Place Order) →', 'Confirm & Place Order →')}</span>
                 )}
               </button>
 
-              <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-gray-500 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                 <span>{t('১০০% নিরাপদ ও সুরক্ষিত চেকআউট', '100% Encrypted & Secure Checkout')}</span>
               </div>
             </div>

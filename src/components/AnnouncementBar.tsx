@@ -1,6 +1,5 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { Phone, ExternalLink } from 'lucide-react';
 
 export const AnnouncementBar: React.FC = () => {
   const { siteSettings, language, toggleLanguage, t } = useStore();
@@ -19,17 +18,15 @@ export const AnnouncementBar: React.FC = () => {
             href={siteSettings.developer_whatsapp_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden md:inline-flex items-center gap-1.5 bg-[#1e402a] hover:bg-[#F4A261] hover:text-[#1A1A1A] transition-colors px-2 py-0.5 rounded text-white font-medium"
+            className="hidden md:inline-flex items-center gap-1.5 bg-[#1e402a] hover:bg-[#F4A261] hover:text-[#1A1A1A] transition-colors px-2.5 py-0.5 rounded text-white font-medium text-[11px]"
             title="Chat directly on WhatsApp with SINI IT"
           >
-            <Phone className="w-3 h-3 text-[#25D366]" />
-            <span>Dev by: SINI IT</span>
-            <ExternalLink className="w-2.5 h-2.5 opacity-80" />
+            <span>Dev by: SINI IT →</span>
           </a>
 
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors px-2.5 py-0.5 rounded font-semibold text-white border border-white/20"
+            className="flex items-center gap-1 bg-white/10 hover:bg-white/20 transition-colors px-2.5 py-0.5 rounded font-semibold text-white border border-white/20 cursor-pointer"
           >
             <span>{language === 'bn' ? 'English' : 'বাংলা'}</span>
           </button>

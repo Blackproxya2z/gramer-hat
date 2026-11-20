@@ -31,3 +31,55 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #2D5F3F;
 }
+
+/* Agriculture Nature Animations */
+@keyframes agroTicker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes agroSway {
+  0%, 100% { transform: rotate(-2.5deg) translateY(0); }
+  50% { transform: rotate(2.5deg) translateY(-4px); }
+}
+
+@keyframes agroDrift {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+  50% { transform: translate(15px, -20px) scale(1.05); opacity: 0.6; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+}
+
+@keyframes earthPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-agro-ticker {
+  display: flex;
+  width: max-content;
+  animation: agroTicker 35s linear infinite;
+}
+
+.animate-agro-ticker:hover {
+  animation-play-state: paused;
+}
+
+.animate-agro-sway {
+  transform-origin: bottom center;
+  animation: agroSway 6s ease-in-out infinite;
+}
+
+.animate-agro-drift {
+  animation: agroDrift 8s ease-in-out infinite;
+}
+
+.animate-earth-pulse {
+  animation: earthPulse 4s ease-in-out infinite;
+}
+
+/* Natural agrarian pattern background */
+.bg-agro-pattern {
+  background-color: #f7f4ec;
+  background-image: radial-gradient(#2d5f3f12 1px, transparent 1px);
+  background-size: 24px 24px;
+}

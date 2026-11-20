@@ -1,19 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
-import { 
-  ShoppingBag, 
-  Search, 
-  Truck, 
-  LayoutDashboard, 
-  Smartphone, 
-  X, 
-  PhoneCall, 
-  User, 
-  ChevronDown, 
-  ArrowRight, 
-  Plus, 
-  Check 
-} from 'lucide-react';
 
 const categorySubData: Record<string, {
   subtitle_bn: string;
@@ -142,26 +128,25 @@ export const Header: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search honey, ghee, spices and more…"
-                className="w-full pl-11 pr-14 py-2.5 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-sm text-[#1A1A1A] placeholder-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#2D5F3F] focus:border-[#2D5F3F] transition-all"
+                placeholder="Search honey, ghee, spices, rice..."
+                className="w-full px-4 py-2.5 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-sm text-[#1A1A1A] placeholder-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#2D5F3F] focus:border-[#2D5F3F] transition-all"
               />
-              <Search className="w-4 h-4 text-[#6b7280] absolute left-3.5 top-3.5" />
               <span className="absolute right-3.5 top-3 text-[11px] font-mono text-[#6b7280] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">
                 ⌘ K
               </span>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-12 top-3 text-gray-400 hover:text-gray-600"
+                  className="absolute right-12 top-2.5 text-gray-400 hover:text-gray-600 font-bold px-1"
                 >
-                  <X className="w-4 h-4" />
+                  ✕
                 </button>
               )}
             </div>
           </div>
 
           {/* Right Tools: Language, SINI IT, Cart, CMS */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
             
             {/* Language Toggle in Figma: EN / বাংলা */}
             <button
@@ -178,51 +163,42 @@ export const Header: React.FC = () => {
               href={siteSettings.developer_whatsapp_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366] hover:text-white transition-all text-xs font-bold"
+              className="hidden lg:flex items-center px-2.5 py-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 text-[#128C7E] hover:bg-[#25D366] hover:text-white transition-all text-xs font-bold"
               title="Dev by SINI IT - Click to open WhatsApp chat"
             >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>SINI IT</span>
+              <span>SINI IT →</span>
             </a>
 
             {/* Admin CMS Toggle */}
             <button
               onClick={() => setViewMode(viewMode === 'admin' ? 'store' : 'admin')}
-              className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`hidden sm:flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'admin'
                   ? 'bg-[#F4A261] text-[#1A1A1A]'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>{viewMode === 'admin' ? 'Store' : 'CMS'}</span>
+              <span>{viewMode === 'admin' ? 'Storefront' : 'CMS Admin'}</span>
             </button>
 
             {/* Mobile PWA Sim */}
             <button
               onClick={() => setIsMobileFrame(!isMobileFrame)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer hidden sm:block"
               title="Toggle Mobile PWA View"
             >
-              <Smartphone className="w-4 h-4" />
+              App View
             </button>
 
             {/* Figma Shopping Cart */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2 text-[#1a1a1a] hover:text-[#2D5F3F] transition-colors relative py-1 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-[#2D5F3F] hover:bg-[#1e4029] text-white font-sans font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
               aria-label="View Shopping Cart"
             >
-              <div className="relative">
-                <ShoppingBag className="w-5 h-5 text-[#2D5F3F]" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-[#E76F51] text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden sm:inline font-sans font-medium text-sm text-[#1A1A1A]">
-                Cart ({cartCount})
+              <span>Cart</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-white text-[#2D5F3F] text-[11px] font-black">
+                {cartCount}
               </span>
             </button>
 
@@ -237,14 +213,13 @@ export const Header: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search honey, ghee, spices..."
-              className="w-full pl-9 pr-4 py-2 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-xs"
+              placeholder="Search honey, ghee, spices, rice..."
+              className="w-full px-3.5 py-2 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-xs"
             />
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
           </div>
 
-          {/* Mobile Category Navigation Strip */}
-          <div className="flex items-center gap-2 overflow-x-auto pt-2.5 pb-1 no-scrollbar">
+          {/* Mobile Category Navigation Strip (Pure Text - No Emojis) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2.5 pb-1 no-scrollbar">
             <button
               onClick={() => handleCategorySelect('all')}
               className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors shrink-0 ${
@@ -259,13 +234,12 @@ export const Header: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => handleCategorySelect(c.id)}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors shrink-0 ${
                   activeCategory === c.id
                     ? 'bg-[#2D5F3F] text-white'
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                <span>{c.icon}</span>
                 <span>{language === 'bn' ? c.name_bn : c.name_en}</span>
               </button>
             ))}
@@ -292,9 +266,9 @@ export const Header: React.FC = () => {
               }`}
             >
               <span>{t('সকল পণ্য', 'All products')}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
+              <span className={`text-[10px] text-gray-400 transition-transform duration-200 inline-block ${
                 activeDropdown === 'all' ? 'rotate-180 text-[#2D5F3F]' : ''
-              }`} />
+              }`}>▾</span>
             </button>
 
             {/* Mega Dropdown for All Products */}
@@ -302,9 +276,8 @@ export const Header: React.FC = () => {
               <div className="absolute top-full left-0 w-[580px] bg-white rounded-2xl shadow-2xl border border-gray-200 p-5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
                   <div>
-                    <h4 className="font-bold text-sm text-[#1A1A1A] flex items-center gap-1.5">
-                      <span>🌾</span>
-                      <span>{t('গ্রামের হাটের সকল খাদ্য সম্ভার', 'Gramer Hat Agro Collections')}</span>
+                    <h4 className="font-bold text-sm text-[#1A1A1A]">
+                      {t('গ্রামের হাটের সকল খাদ্য সম্ভার', 'Gramer Hat Agro Collections')}
                     </h4>
                     <p className="text-[11px] text-gray-500">
                       {t('সরাসরি চাষী ও মৌয়ালদের থেকে সংগৃহীত খাঁটি পণ্য', 'Pure farm-direct harvests and pantry essentials')}
@@ -312,10 +285,9 @@ export const Header: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleCategorySelect('all')}
-                    className="text-xs font-bold text-[#2D5F3F] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs font-bold text-[#2D5F3F] hover:underline cursor-pointer"
                   >
-                    <span>{t('সব পণ্য দেখুন', 'View All 12 Items')}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>{t('সব পণ্য দেখুন →', 'View All 12 Items →')}</span>
                   </button>
                 </div>
 
@@ -332,8 +304,8 @@ export const Header: React.FC = () => {
                           <img src={cat.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-900 group-hover:text-[#2D5F3F] flex items-center gap-1">
-                            <span>{cat.name_en}</span>
+                          <p className="text-xs font-bold text-gray-900 group-hover:text-[#2D5F3F]">
+                            <span>{cat.name_en}</span>{' '}
                             <span className="text-gray-400 font-normal">({cat.name_bn})</span>
                           </p>
                           <span className="text-[10px] text-gray-500">
@@ -353,7 +325,7 @@ export const Header: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleCategorySelect('cat-5')}
-                    className="text-[#2D5F3F] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-[#2D5F3F] font-bold hover:underline cursor-pointer"
                   >
                     <span>{t('শীতের নলেন গুড় →', 'Winter Jaggery →')}</span>
                   </button>
@@ -390,9 +362,9 @@ export const Header: React.FC = () => {
                   }`}
                 >
                   <span>{cat.name_en}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                  <span className={`text-[10px] text-gray-400 transition-transform duration-200 inline-block ${
                     isOpen ? 'rotate-180 text-[#2D5F3F]' : ''
-                  }`} />
+                  }`}>▾</span>
                 </button>
 
                 {/* Dropdown Card for each category */}
@@ -402,9 +374,8 @@ export const Header: React.FC = () => {
                     {/* Category Title & Tagline */}
                     <div className="pb-3 border-b border-gray-100">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-sm text-[#1A1A1A] flex items-center gap-1.5">
-                          <span>{cat.icon}</span>
-                          <span className="text-[#2D5F3F]">{cat.name_en}</span>
+                        <h4 className="font-bold text-sm text-[#1A1A1A]">
+                          <span className="text-[#2D5F3F]">{cat.name_en}</span>{' '}
                           <span className="text-gray-500 font-normal">({cat.name_bn})</span>
                         </h4>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#2D5F3F]">
@@ -467,11 +438,10 @@ export const Header: React.FC = () => {
 
                               <button
                                 onClick={() => addToCart(prod, prod.variants[0])}
-                                className="px-2.5 py-1 rounded-lg bg-[#2D5F3F] hover:bg-[#1e402a] text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-colors shrink-0 cursor-pointer"
+                                className="px-2.5 py-1 rounded-lg bg-[#2D5F3F] hover:bg-[#1e402a] text-white text-[11px] font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
                                 title="Add to Cart"
                               >
-                                <Plus className="w-3 h-3" />
-                                <span>{t('কার্ট', 'Add')}</span>
+                                <span>{t('কার্টে যোগ', 'Add')}</span>
                               </button>
                             </div>
                           ))}
@@ -483,10 +453,9 @@ export const Header: React.FC = () => {
                     <div className="mt-3 pt-3 border-t border-gray-100 text-center">
                       <button
                         onClick={() => handleCategorySelect(cat.id)}
-                        className="w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#2D5F3F] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#2D5F3F] text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                       >
-                        <span>{t(`সব ${cat.name_bn} পণ্য দেখুন`, `Explore all ${cat.name_en} products`)}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <span>{t(`সব ${cat.name_bn} পণ্য দেখুন →`, `Explore all ${cat.name_en} products →`)}</span>
                       </button>
                     </div>
 
@@ -503,10 +472,9 @@ export const Header: React.FC = () => {
             </a>
             <button
               onClick={() => setIsTrackingOpen(true)}
-              className="hover:text-[#2D5F3F] transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="hover:text-[#2D5F3F] transition-colors cursor-pointer"
             >
-              <Truck className="w-3.5 h-3.5 text-[#2D5F3F]" />
-              <span>Track order</span>
+              <span>Track order →</span>
             </button>
           </div>
         </div>

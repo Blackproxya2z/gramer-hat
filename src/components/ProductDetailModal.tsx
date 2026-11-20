@@ -1,18 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { ProductVariant } from '../types';
-import { 
-  X, 
-  Star, 
-  ShoppingBag, 
-  Zap, 
-  ShieldCheck, 
-  Share2, 
-  MapPin, 
-  CheckCircle2, 
-  Plus, 
-  Minus 
-} from 'lucide-react';
 
 export const ProductDetailModal: React.FC = () => {
   const { 
@@ -78,10 +66,10 @@ export const ProductDetailModal: React.FC = () => {
         {/* Close Button */}
         <button
           onClick={() => setSelectedProduct(null)}
-          className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+          className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center transition-colors cursor-pointer text-sm"
           aria-label="Close modal"
         >
-          <X className="w-5 h-5" />
+          ✕
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 sm:p-8">
@@ -108,7 +96,7 @@ export const ProductDetailModal: React.FC = () => {
                   <button
                     key={i}
                     onClick={() => setActiveImage(i)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                       activeImage === i ? 'border-[#2D5F3F] scale-95 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
@@ -118,14 +106,14 @@ export const ProductDetailModal: React.FC = () => {
               </div>
             )}
 
-            {/* Quick Guarantees */}
-            <div className="p-3.5 bg-[#f2f8f4] rounded-xl border border-[#2D5F3F]/15 flex items-center justify-around text-xs text-[#2D5F3F] font-semibold">
+            {/* Quick Guarantees (Pure Typography Badges) */}
+            <div className="p-3 bg-[#f2f8f4] rounded-xl border border-[#2D5F3F]/15 flex items-center justify-around text-xs text-[#2D5F3F] font-semibold">
               <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#2D5F3F]" />
+                <span className="font-mono font-bold text-[11px] px-1.5 py-0.2 rounded bg-[#2D5F3F]/10">01</span>
                 <span>{t('১০০% খাঁটি পণ্য', '100% Pure Guarantee')}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#2D5F3F]" />
+                <span className="font-mono font-bold text-[11px] px-1.5 py-0.2 rounded bg-[#2D5F3F]/10">02</span>
                 <span>{t('ক্যাশ অন ডেলিভারি', 'COD Available')}</span>
               </div>
             </div>
@@ -140,8 +128,7 @@ export const ProductDetailModal: React.FC = () => {
                   SKU: {selectedVariant.sku || selectedProduct.sku}
                 </span>
                 {selectedProduct.origin_bn && (
-                  <span className="flex items-center gap-1 text-gray-500">
-                    <MapPin className="w-3 h-3 text-[#E76F51]" />
+                  <span className="text-gray-500 font-medium">
                     {language === 'bn' ? selectedProduct.origin_bn : selectedProduct.origin_en}
                   </span>
                 )}
@@ -152,15 +139,12 @@ export const ProductDetailModal: React.FC = () => {
                 {language === 'bn' ? selectedProduct.title_bn : selectedProduct.title_en}
               </h1>
 
-              {/* Ratings */}
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex text-amber-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
-                </div>
-                <span className="text-sm font-bold text-gray-700">{selectedProduct.rating}</span>
-                <span className="text-xs text-gray-400">({selectedProduct.reviews_count} {t('রিভিউ', 'reviews')})</span>
+              {/* Ratings (Clean text only - no star icons) */}
+              <div className="flex items-center gap-2 mt-2 text-xs">
+                <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-bold border border-amber-200">
+                  {selectedProduct.rating} / 5.0
+                </span>
+                <span className="text-gray-500">({selectedProduct.reviews_count} {t('রিভিউ', 'verified reviews')})</span>
               </div>
 
               {/* Pricing */}
@@ -227,23 +211,23 @@ export const ProductDetailModal: React.FC = () => {
                 <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="p-2 text-gray-500 hover:bg-gray-100 transition-colors"
+                    className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 transition-colors font-bold text-sm cursor-pointer"
                   >
-                    <Minus className="w-3.5 h-3.5" />
+                    −
                   </button>
-                  <span className="px-4 py-1.5 text-sm font-bold text-gray-800 tabular-nums">
+                  <span className="px-3 py-1.5 text-sm font-bold text-gray-800 tabular-nums">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="p-2 text-gray-500 hover:bg-gray-100 transition-colors"
+                    className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 transition-colors font-bold text-sm cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    +
                   </button>
                 </div>
-                <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {t('স্টকে আছে', 'In Stock')}
+                <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>{t('স্টকে আছে', 'In Stock')}</span>
                 </span>
               </div>
             </div>
@@ -253,27 +237,24 @@ export const ProductDetailModal: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleAddToCart}
-                  className="py-3 px-4 rounded-xl bg-white border-2 border-[#2D5F3F] text-[#2D5F3F] hover:bg-[#2D5F3F] hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+                  className="py-3 px-4 rounded-xl bg-white border-2 border-[#2D5F3F] text-[#2D5F3F] hover:bg-[#2D5F3F] hover:text-white font-bold text-sm flex items-center justify-center transition-all shadow-xs cursor-pointer active:scale-98"
                 >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>{t('কার্টে যোগ করুন', 'Add to Cart')}</span>
+                  <span>{t('কার্টে যোগ করুন', 'Add to Bag')}</span>
                 </button>
 
                 <button
                   onClick={handleBuyNow}
-                  className="py-3 px-4 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#2D5F3F]/20"
+                  className="py-3 px-4 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-sm flex items-center justify-center transition-all shadow-md shadow-[#2D5F3F]/20 cursor-pointer active:scale-98"
                 >
-                  <Zap className="w-4 h-4 text-[#F4A261]" />
-                  <span>{t('এখনই অর্ডার করুন', 'Buy Now')}</span>
+                  <span>{t('এখনই অর্ডার করুন →', 'Buy Now →')}</span>
                 </button>
               </div>
 
               <button
                 onClick={handleShare}
-                className="w-full py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>{t('বন্ধুদের সাথে শেয়ার করুন', 'Share with friends')}</span>
+                <span>{t('বন্ধুদের সাথে শেয়ার করুন →', 'Share product link →')}</span>
               </button>
             </div>
 

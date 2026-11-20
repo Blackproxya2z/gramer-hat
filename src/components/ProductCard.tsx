@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { Product, ProductVariant } from '../types';
 import { useStore } from '../context/StoreContext';
-import { Heart, Plus } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -60,10 +59,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Save Product Heart Icon (Top Right) */}
         <button
           onClick={handleSave}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-xs text-gray-500 hover:text-red-500 shadow-xs transition-colors"
+          className={`absolute top-3 right-3 px-2 py-1 rounded-md text-[10px] font-bold backdrop-blur-xs shadow-xs transition-colors cursor-pointer ${
+            isSaved ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-white/90 text-gray-500 hover:text-[#2D5F3F] border border-gray-100'
+          }`}
           title="Save product"
         >
-          <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+          {isSaved ? 'Saved' : 'Save'}
         </button>
       </div>
 
@@ -100,9 +101,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="mt-4 pt-3 border-t border-gray-100">
           <button
             onClick={handleAdd}
-            className="w-full h-11 rounded-lg bg-white border border-[#2D5F3F] text-[#2D5F3F] hover:bg-[#2D5F3F] hover:text-white font-sans font-semibold text-[14px] flex items-center justify-center gap-2 transition-all shadow-xs active:scale-98"
+            className="w-full h-11 rounded-lg bg-white border border-[#2D5F3F] text-[#2D5F3F] hover:bg-[#2D5F3F] hover:text-white font-sans font-semibold text-[14px] flex items-center justify-center transition-all shadow-xs active:scale-98 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
             <span>Add to bag</span>
           </button>
         </div>

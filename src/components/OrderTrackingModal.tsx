@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { 
-  X, 
-  Search, 
-  Truck, 
-  PackageCheck, 
-  CheckCircle, 
-  Clock, 
-  MapPin, 
-  AlertCircle 
-} from 'lucide-react';
 
 export const OrderTrackingModal: React.FC = () => {
   const { isTrackingOpen, setIsTrackingOpen, orders, language, t } = useStore();
@@ -32,26 +22,24 @@ export const OrderTrackingModal: React.FC = () => {
       <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden my-6">
         
         {/* Header */}
-        <div className="p-4 sm:p-6 bg-[#2D5F3F] text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
-              <Truck className="w-5 h-5 text-[#F4A261]" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold font-bengali">
-                {t('লাইভ অর্ডার ট্র্যাকিং', 'Live Order Tracking')}
-              </h2>
-              <p className="text-xs text-emerald-100">
-                {t('অর্ডার নম্বর অথবা মোবাইল নম্বর দিয়ে সার্চ করুন', 'Search by Order Number or Phone Number')}
-              </p>
-            </div>
+        <div className="p-4 sm:p-6 bg-[#1e402a] text-white flex items-center justify-between border-b border-emerald-800">
+          <div>
+            <span className="font-mono text-[10px] tracking-wider text-emerald-300 uppercase block font-bold">
+              [ REALTIME LOGISTICS ]
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold font-bengali">
+              {t('লাইভ অর্ডার ট্র্যাকিং', 'Live Order Tracking')}
+            </h2>
+            <p className="text-xs text-emerald-200 mt-0.5">
+              {t('অর্ডার নম্বর অথবা মোবাইল নম্বর দিয়ে সার্চ করুন', 'Search by Order Number or Phone Number')}
+            </p>
           </div>
 
           <button
             onClick={() => setIsTrackingOpen(false)}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold flex items-center justify-center transition-colors cursor-pointer text-sm"
           >
-            <X className="w-5 h-5" />
+            ✕
           </button>
         </div>
 
@@ -67,9 +55,8 @@ export const OrderTrackingModal: React.FC = () => {
                   setSearched(true);
                 }}
                 placeholder={t('যেমন: GH-2026-004821 অথবা 01711223344', 'e.g. GH-2026-004821 or 01711223344')}
-                className="w-full pl-10 pr-3 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2D5F3F]"
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2D5F3F]"
               />
-              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
             </div>
           </div>
 
@@ -80,7 +67,7 @@ export const OrderTrackingModal: React.FC = () => {
               <button
                 key={o.id}
                 onClick={() => setQuery(o.order_number)}
-                className="px-2 py-0.5 rounded bg-white border border-gray-200 text-gray-700 font-mono text-[11px] hover:border-[#2D5F3F]"
+                className="px-2 py-0.5 rounded bg-white border border-gray-200 text-gray-700 font-mono text-[11px] hover:border-[#2D5F3F] cursor-pointer"
               >
                 {o.order_number}
               </button>
@@ -99,7 +86,7 @@ export const OrderTrackingModal: React.FC = () => {
                   <span className="text-[11px] text-gray-500 block uppercase font-bold tracking-wider">
                     {t('অর্ডার নম্বর', 'Order ID')}
                   </span>
-                  <span className="text-base sm:text-lg font-black text-[#2D5F3F]">
+                  <span className="text-base sm:text-lg font-black text-[#2D5F3F] font-mono">
                     {matchedOrder.order_number}
                   </span>
                   <p className="text-xs text-gray-600 mt-0.5">
@@ -118,14 +105,14 @@ export const OrderTrackingModal: React.FC = () => {
                     {matchedOrder.order_status}
                   </span>
                   {matchedOrder.courier_name && (
-                    <p className="text-[11px] text-gray-500 mt-1">
+                    <p className="text-[11px] text-gray-500 mt-1 font-mono">
                       {matchedOrder.courier_name} (TRX: {matchedOrder.tracking_number || 'STF-BD'})
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Progress Steps Timeline */}
+              {/* Progress Steps Timeline (Clean Typography & Numbered Indicators) */}
               <div className="space-y-4">
                 <h4 className="text-xs uppercase font-bold text-gray-400 tracking-wider">
                   {t('ডেলিভারি টাইমলাইন ও অগ্রগতি', 'Delivery Timeline & Progress')}
@@ -134,14 +121,10 @@ export const OrderTrackingModal: React.FC = () => {
                 <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
                   {matchedOrder.timeline.map((step, idx) => (
                     <div key={idx} className="relative flex items-start gap-3">
-                      <div className={`absolute -left-6 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-white ${
-                        step.completed ? 'bg-[#2D5F3F]' : 'bg-gray-200'
+                      <div className={`absolute -left-6 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold text-white ${
+                        step.completed ? 'bg-[#2D5F3F]' : 'bg-gray-300'
                       }`}>
-                        {step.completed ? (
-                          <CheckCircle className="w-3.5 h-3.5" />
-                        ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                        )}
+                        {idx + 1}
                       </div>
 
                       <div className="min-w-0 flex-1">
@@ -150,7 +133,7 @@ export const OrderTrackingModal: React.FC = () => {
                         }`}>
                           {language === 'bn' ? step.title_bn : step.title_en}
                         </p>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
+                        <p className="text-[11px] text-gray-500 mt-0.5 font-mono">
                           {step.time}
                         </p>
                       </div>
@@ -160,20 +143,19 @@ export const OrderTrackingModal: React.FC = () => {
               </div>
 
               {/* Destination Address */}
-              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex items-start gap-2.5 text-xs text-gray-700">
-                <MapPin className="w-4 h-4 text-[#E76F51] shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-gray-900 block">{t('গন্তব্য ঠিকানা:', 'Destination Address:')}</span>
-                  <p className="text-gray-600 mt-0.5">
-                    {matchedOrder.shipping_address.address_line}, {matchedOrder.shipping_address.thana}, {matchedOrder.shipping_address.district}
-                  </p>
-                </div>
+              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-700">
+                <span className="font-bold text-gray-900 block mb-0.5">{t('গন্তব্য ঠিকানা:', 'Destination Address:')}</span>
+                <p className="text-gray-600">
+                  {matchedOrder.shipping_address.address_line}, {matchedOrder.shipping_address.thana}, {matchedOrder.shipping_address.district}
+                </p>
               </div>
 
             </div>
           ) : (
             <div className="py-12 text-center text-gray-500 space-y-2">
-              <AlertCircle className="w-10 h-10 text-gray-300 mx-auto" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-mono font-bold text-gray-400 mx-auto">
+                [ 0 ]
+              </div>
               <p className="text-sm font-bold">{t('কোনো অর্ডার খুঁজে পাওয়া যায়নি।', 'No order found with this query.')}</p>
               <p className="text-xs text-gray-400">{t('অনুগ্রহ করে সঠিক অর্ডার বা মোবাইল নম্বর দিন।', 'Please check your order ID or mobile number.')}</p>
             </div>
