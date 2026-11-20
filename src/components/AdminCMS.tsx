@@ -48,11 +48,22 @@ export const AdminCMS: React.FC = () => {
     t,
     setViewMode,
     categories,
-    showToast
+    showToast,
+    adminAuth,
+    loginAdmin,
+    logoutAdmin
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'settings'>('dashboard');
-  const [role, setRole] = useState<'admin' | 'moderator'>('admin');
+
+  // Security Login Gate State
+  const [loginRole, setLoginRole] = useState<'admin' | 'moderator'>('admin');
+  const [loginPin, setLoginPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Active Role is derived from authenticated session
+  const role = adminAuth.role || 'moderator';
   
   // Product Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -72,18 +83,68 @@ export const AdminCMS: React.FC = () => {
   const [isBestseller, setIsBestseller] = useState(false);
   const [isPreorder, setIsPreorder] = useState(false);
 
+  // Image Processing State (Auto-Framing 1:1 & PNG-to-JPG Conversion)
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [imageConversionStats, setImageConversionStats] = useState<ProcessedImageResult | null>(null);
+  const [manualUrlMode, setManualUrlMode] = useState(false);
+
   // Settings form states
   const [bkashNum, setBkashNum] = useState(siteSettings.bkash_number);
   const [nagadNum, setNagadNum] = useState(siteSettings.nagad_number);
   const [announcementBn, setAnnouncementBn] = useState(siteSettings.announcement_bn);
   const [announcementEn, setAnnouncementEn] = useState(siteSettings.announcement_en);
   const [freeShipThreshold, setFreeShipThreshold] = useState(siteSettings.free_shipping_threshold);
+  const [storeWhatsapp, setStoreWhatsapp] = useState(siteSettings.store_whatsapp || '+880 1995-180029');
+  const [adminPin, setAdminPin] = useState(siteSettings.admin_pin || 'admin123');
+  const [moderatorPin, setModeratorPin] = useState(siteSettings.moderator_pin || 'mod123');
 
   // Analytics metrics
   const totalRevenue = orders.reduce((acc, o) => acc + o.total, 0);
   const totalOrdersCount = orders.length;
   const lowStockCount = products.filter(p => p.stock_quantity <= p.low_stock_threshold).length;
   const pendingOrdersCount = orders.filter(o => o.order_status === 'pending').length;
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+    if (!loginPin.trim()) {
+      setLoginError(language === 'bn' ? 'অনুগ্রহ করে সিকিউরিটি পিন কোড দিন' : 'Please enter security PIN');
+      return;
+    }
+    const res = loginAdmin(loginPin, loginRole);
+    if (!res.success) {
+      setLoginError(res.message);
+    } else {
+      setLoginPin('');
+    }
+  };
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImageProcessing(true);
+      // Auto-frames to 1:1 square (800x800), fills white canvas for transparent PNG, converts to optimized JPEG
+      const result = await processProductImage(file, 800, 0.85);
+      setImageUrl(result.dataUrl);
+      setImageConversionStats(result);
+      showToast(
+        language === 'bn'
+          ? `✓ ছবি সফলভাবে ১:১ স্কয়ার ফ্রেমে ও JPG ফরম্যাটে রূপান্তর হয়েছে (${result.optimizedSizeKB} KB)`
+          : `✓ Image framed 1:1 & converted to optimized JPG (${result.optimizedSizeKB} KB)`
+      );
+    } catch (err: any) {
+      console.error('Image processing failed:', err);
+      showToast(
+        language === 'bn'
+          ? 'ছবি প্রসেস করতে ব্যর্থ হয়েছে। সঠিক ছবি ফাইল নির্বাচন করুন।'
+          : 'Failed to process image file. Please choose a valid image.'
+      );
+    } finally {
+      setImageProcessing(false);
+    }
+  };
 
   const handleOpenAddModal = () => {
     setTitleBn('');
@@ -96,6 +157,8 @@ export const AdminCMS: React.FC = () => {
     setShortDescBn('');
     setShortDescEn('');
     setImageUrl('https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=600&q=80');
+    setImageConversionStats(null);
+    setManualUrlMode(false);
     setIsBestseller(false);
     setIsPreorder(false);
     setEditingProduct(null);
@@ -142,14 +205,189 @@ export const AdminCMS: React.FC = () => {
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanPhone = storeWhatsapp.trim();
+    const cleanDigits = cleanPhone.replace(/[^0-9]/g, '');
     updateSiteSettings({
       bkash_number: bkashNum,
       nagad_number: nagadNum,
       announcement_bn: announcementBn,
       announcement_en: announcementEn,
       free_shipping_threshold: Number(freeShipThreshold),
+      store_whatsapp: cleanPhone,
+      store_whatsapp_url: `https://wa.me/${cleanDigits}`,
+      contact_phone: cleanPhone,
+      admin_pin: adminPin,
+      moderator_pin: moderatorPin,
     });
   };
+
+  // If not authenticated, render the production security login gate
+  if (!adminAuth.isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F7F4EC] flex flex-col justify-between p-4 sm:p-8">
+        <div className="max-w-md w-full mx-auto my-auto py-8">
+          
+          {/* Logo & Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-[#2D5F3F] text-white flex items-center justify-center font-black text-2xl mx-auto shadow-xl border-2 border-emerald-800 mb-4">
+              GH
+            </div>
+            <h1 className="font-bengaliSerif font-bold text-2xl sm:text-3xl text-[#1A1A1A]">
+              {siteSettings.site_name_bn}
+            </h1>
+            <p className="text-xs uppercase tracking-widest text-[#2D5F3F] font-bold mt-1">
+              {siteSettings.site_name_en} · Headless CMS Security
+            </p>
+            <p className="text-xs text-gray-600 mt-2">
+              {t(
+                'সুরক্ষিত অ্যাডমিন সিস্টেমে প্রবেশ করতে আপনার পিন কোড প্রদান করুন',
+                'Enter your security PIN to access the CMS management panel'
+              )}
+            </p>
+          </div>
+
+          {/* Login Card */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 space-y-6">
+            
+            {/* Role Picker */}
+            <div>
+              <label className="text-xs font-bold text-gray-700 block mb-2">
+                {t('অ্যাক্সেস রোল নির্বাচন করুন', 'Select Access Role')}
+              </label>
+              <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => setLoginRole('admin')}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    loginRole === 'admin'
+                      ? 'bg-[#2D5F3F] text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Super Admin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginRole('moderator')}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    loginRole === 'moderator'
+                      ? 'bg-[#2D5F3F] text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Moderator</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  {loginRole === 'admin'
+                    ? t('সুপার অ্যাডমিন পিন / পাসওয়ার্ড', 'Super Admin PIN')
+                    : t('মডারেটর পিন / পাসওয়ার্ড', 'Moderator PIN')}
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPin ? 'text' : 'password'}
+                    value={loginPin}
+                    onChange={(e) => setLoginPin(e.target.value)}
+                    placeholder={loginRole === 'admin' ? 'admin123' : 'mod123'}
+                    autoFocus
+                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-[#2D5F3F] focus:border-transparent transition-all"
+                  />
+                  <Key className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPin(!showPin)}
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {loginError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              {/* Quick Demo Credentials for Fast Testing */}
+              <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl text-[11px] text-emerald-900 space-y-1.5">
+                <span className="font-bold flex items-center gap-1 text-[#2D5F3F]">
+                  <Lock className="w-3 h-3" />
+                  {t('দ্রুত টেস্ট করার জন্য ডিফল্ট পিন:', 'Default Testing Credentials:')}
+                </span>
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('admin');
+                      setLoginPin('admin123');
+                    }}
+                    className="px-2 py-1 bg-white border border-emerald-200 rounded-lg font-mono text-[10px] font-bold text-gray-800 hover:bg-emerald-100 transition-colors cursor-pointer"
+                  >
+                    Admin: <span className="text-[#2D5F3F]">admin123</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginRole('moderator');
+                      setLoginPin('mod123');
+                    }}
+                    className="px-2 py-1 bg-white border border-emerald-200 rounded-lg font-mono text-[10px] font-bold text-gray-800 hover:bg-emerald-100 transition-colors cursor-pointer"
+                  >
+                    Mod: <span className="text-[#2D5F3F]">mod123</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 px-4 rounded-2xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Unlock className="w-4 h-4" />
+                <span>{t('সিএমএস প্যানেলে লগইন করুন', 'Authenticate & Login')}</span>
+              </button>
+            </form>
+
+            {/* Back to storefront link */}
+            <div className="pt-2 text-center">
+              <button
+                onClick={() => setViewMode('store')}
+                className="text-xs text-gray-500 hover:text-[#2D5F3F] font-medium underline cursor-pointer"
+              >
+                ← {t('স্টোরফ্রন্টে ফিরে যান', 'Back to Storefront')}
+              </button>
+            </div>
+
+          </div>
+
+          {/* Developer Attribution by SINI IT */}
+          <div className="mt-8 text-center space-y-2">
+            <a
+              href="https://wa.me/8801647236359"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition-all shadow-sm"
+            >
+              <span>Development by: SINI IT</span>
+              <ExternalLink className="w-3 h-3 opacity-70" />
+            </a>
+            <p className="text-[11px] text-gray-500 font-mono">
+              Direct WhatsApp: +8801647236359
+            </p>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
@@ -163,42 +401,35 @@ export const AdminCMS: React.FC = () => {
           <div>
             <h1 className="text-sm sm:text-base font-black flex items-center gap-2">
               <span>{t('গ্রামের হাট - হেডলেস সিএমএস অ্যাডমিন', 'Gramer Hat - Headless CMS Admin')}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F4A261] text-[#1A1A1A] font-bold uppercase">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                role === 'admin' ? 'bg-[#F4A261] text-[#1A1A1A]' : 'bg-emerald-500 text-white'
+              }`}>
                 {role === 'admin' ? 'Super Admin' : 'Moderator'}
               </span>
             </h1>
-            <p className="text-[11px] text-emerald-200">
-              PWA Ready Mobile & Desktop Backoffice Control
+            <p className="text-[11px] text-emerald-200 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>PWA Ready Mobile & Desktop Backoffice · Secure Session</span>
             </p>
           </div>
         </div>
 
-        {/* Role switcher & Back to store */}
-        <div className="flex items-center gap-2 text-xs">
-          <div className="bg-white/10 p-0.5 rounded-lg flex items-center">
-            <button
-              onClick={() => setRole('admin')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                role === 'admin' ? 'bg-[#F4A261] text-[#1A1A1A]' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Super Admin
-            </button>
-            <button
-              onClick={() => setRole('moderator')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                role === 'moderator' ? 'bg-[#F4A261] text-[#1A1A1A]' : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Moderator
-            </button>
-          </div>
-
+        {/* User Info & Actions */}
+        <div className="flex items-center gap-2.5 text-xs">
           <button
             onClick={() => setViewMode('store')}
-            className="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition-colors cursor-pointer"
           >
             {t('স্টোরফ্রন্টে যান →', 'View Storefront →')}
+          </button>
+
+          <button
+            onClick={logoutAdmin}
+            className="px-3 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-600 text-white font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+            title="Log out of CMS"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>{t('লগআউট', 'Logout')}</span>
           </button>
         </div>
       </div>
@@ -539,6 +770,8 @@ export const AdminCMS: React.FC = () => {
                                 setShortDescBn(p.short_description_bn);
                                 setShortDescEn(p.short_description_en);
                                 setImageUrl(p.images[0]);
+                                setImageConversionStats(null);
+                                setManualUrlMode(false);
                                 setIsBestseller(p.is_bestseller);
                                 setIsPreorder(p.is_preorder);
                                 setIsAddModalOpen(true);
@@ -752,10 +985,65 @@ export const AdminCMS: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">
+                  {t('স্টোর কাস্টমার সার্ভিস হোয়াটসঅ্যাপ ও ফোন নম্বর', 'Store Customer Support WhatsApp & Phone')}
+                </label>
+                <input
+                  type="text"
+                  value={storeWhatsapp}
+                  onChange={(e) => setStoreWhatsapp(e.target.value)}
+                  placeholder="+880 1995-180029"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold"
+                />
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {t('গ্রাহকরা এই নম্বরে সরাসরি হোয়াটসঅ্যাপে যোগাযোগ করতে পারবেন (ডিফল্ট: +880 1995-180029)', 'Customers will connect to this WhatsApp number directly')}
+                </p>
+              </div>
+
+              {/* CMS Security Access PINs */}
+              <div className="pt-4 border-t border-gray-100">
+                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-[#2D5F3F]" />
+                  <span>{t('সিএমএস সিকিউরিটি পিন পরিবর্তন', 'CMS Security Access PINs')}</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('সুপার অ্যাডমিন পিন (Super Admin PIN)', 'Super Admin PIN')}
+                    </label>
+                    <input
+                      type="text"
+                      value={adminPin}
+                      onChange={(e) => setAdminPin(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {t('ডিফল্ট: admin123 (সম্পূর্ণ সিস্টেম অ্যাক্সেস)', 'Default: admin123 (Full system control)')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('মডারেটর পিন (Moderator PIN)', 'Moderator PIN')}
+                    </label>
+                    <input
+                      type="text"
+                      value={moderatorPin}
+                      onChange={(e) => setModeratorPin(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {t('ডিফল্ট: mod123 (পণ্য ও অর্ডার প্রসেসিং)', 'Default: mod123 (Products & orders)')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-xs shadow-md transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-xs shadow-md transition-all cursor-pointer"
                 >
                   {t('সেটিংস সংরক্ষণ করুন', 'Save Settings')}
                 </button>
@@ -878,16 +1166,133 @@ export const AdminCMS: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-gray-700 block mb-1">
-                  {t('ছবির URL', 'Image URL')}
-                </label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
-                />
+              {/* Product Image Upload & Automatic Resizing/Conversion */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-gray-700 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#2D5F3F]" />
+                    <span>{t('পণ্যের ছবি (ফোন ক্যামেরা / গ্যালারি)', 'Product Image (Camera / Gallery)')}</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setManualUrlMode(!manualUrlMode)}
+                    className="text-[11px] text-[#2D5F3F] underline font-medium hover:text-[#1e402a] cursor-pointer"
+                  >
+                    {manualUrlMode
+                      ? t('ক্যামেরা/ফাইল আপলোডে ফিরে যান', 'Switch to File/Camera')
+                      : t('বা সরাসরি ছবির URL দিন', 'Or paste Image URL')}
+                  </button>
+                </div>
+
+                {!manualUrlMode ? (
+                  <div className="space-y-2.5">
+                    {/* Upload drop/tap zone */}
+                    <label
+                      htmlFor="cms-product-image-file"
+                      className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-4 transition-all cursor-pointer ${
+                        imageProcessing
+                          ? 'bg-emerald-50 border-emerald-400 animate-pulse'
+                          : 'bg-gray-50 border-gray-300 hover:border-[#2D5F3F] hover:bg-emerald-50/30'
+                      }`}
+                    >
+                      <input
+                        id="cms-product-image-file"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleImageFileChange}
+                        disabled={imageProcessing}
+                        className="hidden"
+                      />
+
+                      {imageProcessing ? (
+                        <div className="py-4 text-center space-y-2">
+                          <RefreshCw className="w-6 h-6 text-[#2D5F3F] animate-spin mx-auto" />
+                          <p className="text-xs font-bold text-[#2D5F3F]">
+                            {t('ছবি ১:১ স্কয়ার ফ্রেমে সাইজ ও JPG তে রূপান্তর হচ্ছে...', 'Framing 1:1 square & converting to JPG...')}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-2 space-y-1.5">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-[#2D5F3F] flex items-center justify-center mx-auto">
+                            <Upload className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-800 text-xs">
+                              {t('ছবি তুলতে বা সিলেক্ট করতে এখানে ক্লিক করুন', 'Tap to take photo or choose image from phone')}
+                            </span>
+                            <p className="text-[10px] text-gray-500 mt-0.5">
+                              {t('PNG বা যেকোনো ফরম্যাট স্বয়ংক্রিয়ভাবে ৮০০×৮০০ স্কয়ার JPG-তে অপ্টিমাইজ হবে', 'Auto-crops to 1:1 (800x800) and converts PNG to optimized JPG')}
+                            </p>
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#2D5F3F] text-[10px] font-bold">
+                            <Sparkles className="w-3 h-3" /> Auto 1:1 Square Frame & JPEG Compression
+                          </span>
+                        </div>
+                      )}
+                    </label>
+
+                    {/* Preview & Conversion Stats */}
+                    {imageUrl && (
+                      <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-center gap-3">
+                        <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-sm shrink-0 bg-white">
+                          <img
+                            src={imageUrl}
+                            alt="Framed preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center font-mono py-0.5">
+                            1:1 Square
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1 text-[11px] space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{t('ছবি সফলভাবে প্রসেস হয়েছে!', 'Image ready & framed!')}</span>
+                          </div>
+                          {imageConversionStats ? (
+                            <p className="text-[10px] text-emerald-800 font-mono">
+                              {imageConversionStats.originalFormat.split('/')[1]?.toUpperCase()} ({imageConversionStats.originalSizeKB} KB) ➔ JPG ({imageConversionStats.optimizedSizeKB} KB) · 800×800
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-gray-500">
+                              Format: 800×800 Square JPEG
+                            </p>
+                          )}
+                          <p className="text-[10px] text-gray-400 truncate">
+                            {imageUrl.startsWith('data:') ? '✓ Base64 DataPayload Ready' : imageUrl}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImageUrl('');
+                            setImageConversionStats(null);
+                          }}
+                          className="p-1 rounded-lg hover:bg-emerald-100 text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="url"
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://example.com/product-image.jpg"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
+                    />
+                    {imageUrl && (
+                      <div className="mt-2 w-14 h-14 rounded-lg overflow-hidden border border-gray-200">
+                        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-4 pt-1">

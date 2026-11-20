@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
-import { Sparkles, Phone, ExternalLink } from 'lucide-react';
+import { Phone, ExternalLink } from 'lucide-react';
 
 export const AnnouncementBar: React.FC = () => {
   const { siteSettings, language, toggleLanguage, t } = useStore();
@@ -9,7 +9,6 @@ export const AnnouncementBar: React.FC = () => {
     <div className="bg-[#2D5F3F] text-white text-xs sm:text-sm font-medium py-1.5 px-3 border-b border-[#3d7c54]">
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
-          <Sparkles className="w-4 h-4 text-[#F4A261] shrink-0 animate-pulse" />
           <span>
             {language === 'bn' ? siteSettings.announcement_bn : siteSettings.announcement_en}
           </span>

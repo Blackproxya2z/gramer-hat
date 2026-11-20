@@ -128,6 +128,8 @@ export interface SiteSettings {
   bank_info: string;
   contact_phone: string;
   contact_email: string;
+  store_whatsapp: string;
+  store_whatsapp_url: string;
   address: string;
   free_shipping_threshold: number;
   inside_dhaka_delivery: number;
