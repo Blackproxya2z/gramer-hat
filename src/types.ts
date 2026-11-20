@@ -114,6 +114,7 @@ export interface AdminAuth {
   role: 'admin' | 'moderator' | null;
   userName: string;
   loginTime: number | null;
+  email?: string;
 }
 
 export interface SiteSettings {
@@ -139,4 +140,34 @@ export interface SiteSettings {
   developer_whatsapp_url: string;
   admin_pin: string;
   moderator_pin: string;
+  admin_email?: string;
+  admin_password?: string;
+  
+  // Hero Banner Customization
+  hero_badge_bn?: string;
+  hero_badge_en?: string;
+  hero_title_bn?: string;
+  hero_title_en?: string;
+  hero_subtitle_bn?: string;
+  hero_subtitle_en?: string;
+  hero_image?: string;
+  hero_note_title?: string;
+  hero_note_subtitle?: string;
+  ticker_text?: string;
+  
+  // Seasonal Feature Customization
+  seasonal_tag?: string;
+  seasonal_title_bn?: string;
+  seasonal_title_en?: string;
+  seasonal_subtitle_bn?: string;
+  seasonal_desc?: string;
+  seasonal_image?: string;
+  seasonal_category_id?: string;
+  
+  // Our Roots Customization
+  roots_tag?: string;
+  roots_title_bn?: string;
+  roots_title_en?: string;
+  roots_desc?: string;
+  roots_image?: string;
 }

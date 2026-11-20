@@ -2,7 +2,21 @@ import React from 'react';
 import { useStore } from '../context/StoreContext';
 
 export const Footer: React.FC = () => {
-  const { siteSettings, language, t } = useStore();
+  const { siteSettings, language, setViewMode, t } = useStore();
+  const [adminClickCount, setAdminClickCount] = React.useState(0);
+
+  const handleSecretTrigger = () => {
+    setAdminClickCount(prev => {
+      const next = prev + 1;
+      if (next >= 3) {
+        window.location.hash = '#admin';
+        setViewMode('admin');
+        return 0;
+      }
+      setTimeout(() => setAdminClickCount(0), 1200);
+      return next;
+    });
+  };
 
   return (
     <footer className="bg-[#1e402a] text-white pt-12 pb-8 border-t border-[#2D5F3F]">
@@ -14,9 +28,14 @@ export const Footer: React.FC = () => {
           {/* Brand & Mission (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-[#2D5F3F] flex items-center justify-center text-white font-serif font-black text-lg shadow-sm border border-emerald-700">
+              <button
+                type="button"
+                onClick={handleSecretTrigger}
+                className="w-10 h-10 rounded-xl bg-[#2D5F3F] flex items-center justify-center text-white font-serif font-black text-lg shadow-sm border border-emerald-700 cursor-default select-none focus:outline-none"
+                title="Gramer Hat Heritage Seal"
+              >
                 GH
-              </div>
+              </button>
               <div>
                 <span className="text-xl font-bold text-white font-bengali">
                   {language === 'bn' ? siteSettings.site_name_bn : siteSettings.site_name_en}

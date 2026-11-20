@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '../context/StoreContext';
 
 export const HeroSlider: React.FC = () => {
-  const { setActiveCategory } = useStore();
+  const { siteSettings, language } = useStore();
 
   const handleShopClick = () => {
     const el = document.getElementById('products-catalog');
@@ -13,6 +13,22 @@ export const HeroSlider: React.FC = () => {
     const el = document.getElementById('our-roots');
     el?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const heroImage = siteSettings.hero_image || '/assets/figma/harvest_table.jpeg';
+  const badgeText = language === 'bn' 
+    ? (siteSettings.hero_badge_bn || 'শতভাগ খাঁটি প্রাকৃতিক কৃষিপণ্য') 
+    : (siteSettings.hero_badge_en || 'Rooted in Nature · 100% Pure Harvest');
+
+  const headlineBn = siteSettings.hero_title_bn || 'গ্রামের খাঁটি স্বাদ,\nএবার আপনার ঘরে।';
+  const headlineEn = siteSettings.hero_title_en || 'Honest food. From our roots to your table.';
+  const subtitle = language === 'bn'
+    ? (siteSettings.hero_subtitle_bn || 'সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু, সিরাজগঞ্জের গাওয়া ঘি, ঘানি ভাঙা সরিষার তেল সরাসরি কৃষকের মাঠ থেকে।')
+    : (siteSettings.hero_subtitle_en || 'Discover the goodness of Bangladesh — thoughtfully sourced honey, ghee, spices and pantry essentials directly from generational beekeepers and farmers.');
+
+  const tickerItems = (siteSettings.ticker_text || 'সুন্দরবনের গভীর অরণ্যের চাকের খাঁটি মধু ● ঘানি ভাঙা কাঠের খাঁটি সরিষার তেল ● সিরাজগঞ্জের দেশি গাভীর বিলোনা গাওয়া ঘি ● যশোরের ঐতিহ্যবাহী খেজুরের নলেন পাটালি গুড় ● দিনাজপুরের সুগন্ধি চিনিগুঁড়া পোলাও চাল ● ১০০% রাসায়নিক ও ভেজালমুক্ত কৃষিপণ্য')
+    .split('●')
+    .map(s => s.trim())
+    .filter(Boolean);
 
   return (
     <section className="relative bg-[#f7f4ec] border-b border-[#e5e7eb] overflow-hidden">
@@ -28,20 +44,19 @@ export const HeroSlider: React.FC = () => {
           <div className="lg:col-span-6 space-y-5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2D5F3F]/10 border border-[#2D5F3F]/20 text-[#2D5F3F] text-[10px] font-sans font-bold tracking-[1.5px] uppercase">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2D5F3F] animate-pulse"></span>
-              <span>Rooted in Nature · 100% Pure Harvest</span>
+              <span>{badgeText}</span>
             </div>
 
-            <h1 className="font-bengaliSerif font-semibold text-4xl sm:text-5xl lg:text-[54px] text-[#1e4029] leading-[1.18] tracking-tight">
-              গ্রামের খাঁটি স্বাদ,<br />
-              এবার আপনার ঘরে।
+            <h1 className="font-bengaliSerif font-semibold text-4xl sm:text-5xl lg:text-[54px] text-[#1e4029] leading-[1.18] tracking-tight whitespace-pre-line">
+              {language === 'bn' ? headlineBn : headlineEn}
             </h1>
 
             <p className="font-sans font-medium text-lg sm:text-[19px] text-[#2D5F3F] leading-snug">
-              Honest food. From our roots to your table.
+              {language === 'bn' ? headlineEn : headlineBn.replace(/\n/g, ' ')}
             </p>
 
             <p className="font-sans font-normal text-sm sm:text-[16px] text-[#6b7280] leading-relaxed max-w-lg">
-              Discover the goodness of Bangladesh — thoughtfully sourced honey, ghee, spices and pantry essentials directly from generational beekeepers and farmers.
+              {subtitle}
             </p>
 
             {/* Hero Actions (Node 2:55 in Figma) */}
@@ -73,7 +88,7 @@ export const HeroSlider: React.FC = () => {
           <div className="lg:col-span-6 flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[620px] aspect-[4/3] rounded-2xl overflow-hidden shadow-xl border border-black/5 group">
               <img
-                src="/assets/figma/harvest_table.jpeg"
+                src={heroImage}
                 alt="Harvest table in rural Bangladesh"
                 className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-700"
               />
@@ -81,10 +96,10 @@ export const HeroSlider: React.FC = () => {
               {/* Harvest Note Overlay Card (Node 2:69 in Figma) */}
               <div className="absolute left-6 bottom-6 bg-white/95 backdrop-blur-xs px-5 py-3 rounded-lg shadow-lg border border-gray-100">
                 <p className="font-display font-medium text-lg sm:text-[20px] text-[#2D5F3F]">
-                  A taste of home.
+                  {siteSettings.hero_note_title || 'A taste of home.'}
                 </p>
                 <p className="font-bengali text-xs sm:text-[11px] text-[#6b7280]">
-                  চেনা স্বাদ, নতুন আস্থায়
+                  {siteSettings.hero_note_subtitle || 'চেনা স্বাদ, নতুন আস্থায়'}
                 </p>
               </div>
             </div>
@@ -96,31 +111,19 @@ export const HeroSlider: React.FC = () => {
       {/* Animated Agriculture Ticker Marquee */}
       <div className="bg-[#1e402a] text-white py-2.5 overflow-hidden border-t border-emerald-800 text-xs font-medium tracking-wide">
         <div className="animate-agro-ticker flex items-center gap-8 whitespace-nowrap">
-          <span className="font-semibold text-emerald-200">সুন্দরবনের গভীর অরণ্যের চাকের খাঁটি মধু</span>
-          <span className="text-emerald-500">●</span>
-          <span>ঘানি ভাঙা কাঠের খাঁটি সরিষার তেল</span>
-          <span className="text-emerald-500">●</span>
-          <span className="font-semibold text-amber-200">সিরাজগঞ্জের দেশি গাভীর বিলোনা গাওয়া ঘি</span>
-          <span className="text-emerald-500">●</span>
-          <span>যশোরের ঐতিহ্যবাহী খেজুরের নলেন পাটালি গুড়</span>
-          <span className="text-emerald-500">●</span>
-          <span className="font-semibold text-emerald-200">দিনাজপুরের সুগন্ধি চিনিগুঁড়া পোলাও চাল</span>
-          <span className="text-emerald-500">●</span>
-          <span>১০০% রাসায়নিক ও ভেজালমুক্ত কৃষিপণ্য</span>
-          <span className="text-emerald-500">●</span>
+          {tickerItems.map((item, idx) => (
+            <React.Fragment key={idx}>
+              <span className="font-semibold text-emerald-200">{item}</span>
+              <span className="text-emerald-500">●</span>
+            </React.Fragment>
+          ))}
           {/* Repeated for continuous smooth loop */}
-          <span className="font-semibold text-emerald-200">সুন্দরবনের গভীর অরণ্যের চাকের খাঁটি মধু</span>
-          <span className="text-emerald-500">●</span>
-          <span>ঘানি ভাঙা কাঠের খাঁটি সরিষার তেল</span>
-          <span className="text-emerald-500">●</span>
-          <span className="font-semibold text-amber-200">সিরাজগঞ্জের দেশি গাভীর বিলোনা গাওয়া ঘি</span>
-          <span className="text-emerald-500">●</span>
-          <span>যশোরের ঐতিহ্যবাহী খেজুরের নলেন পাটালি গুড়</span>
-          <span className="text-emerald-500">●</span>
-          <span className="font-semibold text-emerald-200">দিনাজপুরের সুগন্ধি চিনিগুঁড়া পোলাও চাল</span>
-          <span className="text-emerald-500">●</span>
-          <span>১০০% রাসায়নিক ও ভেজালমুক্ত কৃষিপণ্য</span>
-          <span className="text-emerald-500">●</span>
+          {tickerItems.map((item, idx) => (
+            <React.Fragment key={`rep-${idx}`}>
+              <span className="font-semibold text-emerald-200">{item}</span>
+              <span className="text-emerald-500">●</span>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 

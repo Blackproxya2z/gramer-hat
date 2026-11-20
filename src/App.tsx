@@ -18,6 +18,7 @@ import { WhatsAppButton } from './components/WhatsAppButton';
 const MainApp: React.FC = () => {
   const { 
     viewMode, 
+    setViewMode,
     isMobileFrame, 
     setIsMobileFrame, 
     products, 
@@ -29,11 +30,41 @@ const MainApp: React.FC = () => {
     toastMessage,
     showToast,
     language,
+    siteSettings,
     t
   } = useStore();
 
   const [sortBy, setSortBy] = useState<'featured' | 'price-low' | 'price-high'>('featured');
   const [newsletterEmail, setNewsletterEmail] = useState('');
+
+  // Secure Hidden CMS Access Listener: URL Hash (#admin, #cms) and Keyboard Shortcut (Ctrl+Shift+A)
+  React.useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#admin' || hash === '#cms') {
+        setViewMode('admin');
+      } else if (viewMode === 'admin' && hash === '') {
+        setViewMode('store');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + Shift + A or Ctrl + Alt + A opens secret admin gate
+      if ((e.ctrlKey || e.metaKey) && (e.shiftKey || e.altKey) && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        window.location.hash = '#admin';
+        setViewMode('admin');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [viewMode, setViewMode]);
 
   const currentCategory = categories.find((c) => c.id === activeCategory);
 
@@ -223,7 +254,7 @@ const MainApp: React.FC = () => {
               </div>
             </section>
 
-            {/* Seasonal Feature: Date Palm Jaggery (Node 2:11 in Figma) */}
+            {/* Seasonal Feature: Date Palm Jaggery (Node 2:11 in Figma - Customizer Ready) */}
             <section className="bg-white py-12 sm:py-16 border-b border-[#e5e7eb]">
               <div className="max-w-7xl mx-auto px-4 sm:px-8">
                 <div className="bg-[#f7f4ec] rounded-2xl p-6 sm:p-12 border border-[#e5e7eb] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -231,27 +262,27 @@ const MainApp: React.FC = () => {
                   {/* Left Story */}
                   <div className="lg:col-span-6 space-y-4">
                     <span className="font-sans font-bold text-[10px] tracking-[1.7px] text-[#2D5F3F] uppercase block">
-                      A LITTLE TASTE OF TRADITION
+                      {siteSettings.seasonal_tag || 'A LITTLE TASTE OF TRADITION'}
                     </span>
                     <h3 className="font-display font-medium text-3xl sm:text-4xl text-[#1e4029] leading-tight">
-                      Winter’s sweetest tradition.
+                      {language === 'bn' ? (siteSettings.seasonal_title_bn || 'খেজুরের গুড়ে শীতের আমেজ') : (siteSettings.seasonal_title_en || 'Winter’s sweetest tradition.')}
                     </h3>
                     <p className="font-bengaliSerif font-semibold text-lg text-[#2D5F3F]">
-                      খেজুরের গুড়ে শীতের আমেজ
+                      {language === 'bn' ? (siteSettings.seasonal_title_en || 'Winter’s sweetest tradition.') : (siteSettings.seasonal_title_bn || 'খেজুরের গুড়ে শীতের আমেজ')}
                     </p>
                     <p className="font-sans font-normal text-sm text-[#6b7280] leading-relaxed max-w-md">
-                      Rich, caramel notes. Familiar winter memories, crafted the timeless way in the heart of Jessore.
+                      {siteSettings.seasonal_desc || 'Rich, caramel notes. Familiar winter memories, crafted the timeless way in the heart of Jessore.'}
                     </p>
                     <div className="pt-2">
                       <button
                         onClick={() => {
-                          setActiveCategory('cat-5');
+                          setActiveCategory(siteSettings.seasonal_category_id || 'cat-5');
                           const el = document.getElementById('products-catalog');
                           el?.scrollIntoView({ behavior: 'smooth' });
                         }}
                         className="bg-[#2D5F3F] hover:bg-[#1e4029] text-white font-sans font-semibold text-sm px-6 py-3 rounded-lg inline-flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                       >
-                        <span>Explore jaggery</span>
+                        <span>{t('গুড় ও সিজনাল কালেকশন', 'Explore seasonal')}</span>
                         <span>→</span>
                       </button>
                     </div>
@@ -261,8 +292,8 @@ const MainApp: React.FC = () => {
                   <div className="lg:col-span-6 flex justify-center lg:justify-end">
                     <div className="w-full max-w-[500px] aspect-[16/10] rounded-xl overflow-hidden shadow-lg border border-black/5">
                       <img
-                        src="/assets/figma/cat_jaggery.jpeg"
-                        alt="Date Palm Jaggery Patali"
+                        src={siteSettings.seasonal_image || '/assets/figma/cat_jaggery.jpeg'}
+                        alt="Seasonal agro feature"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -272,7 +303,7 @@ const MainApp: React.FC = () => {
               </div>
             </section>
 
-            {/* Our Roots Section (Node 2:12 in Figma) */}
+            {/* Our Roots Section (Node 2:12 in Figma - Customizer Ready) */}
             <section id="our-roots" className="bg-white py-12 sm:py-16 border-b border-[#e5e7eb]">
               <div className="max-w-7xl mx-auto px-4 sm:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -281,7 +312,7 @@ const MainApp: React.FC = () => {
                   <div className="lg:col-span-6">
                     <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-lg border border-black/5">
                       <img
-                        src="/assets/figma/bangladesh_harvest.jpeg"
+                        src={siteSettings.roots_image || '/assets/figma/bangladesh_harvest.jpeg'}
                         alt="Harvest growers of Bangladesh"
                         className="w-full h-full object-cover"
                       />
@@ -291,16 +322,16 @@ const MainApp: React.FC = () => {
                   {/* Right Roots Story (Node 2:402 in Figma) */}
                   <div className="lg:col-span-6 space-y-4">
                     <span className="font-sans font-bold text-[10px] tracking-[1.7px] text-[#2D5F3F] uppercase block">
-                      A LITTLE CLOSER TO OUR ROOTS
+                      {siteSettings.roots_tag || 'A LITTLE CLOSER TO OUR ROOTS'}
                     </span>
                     <h3 className="font-display font-medium text-3xl sm:text-4xl text-[#1e4029] leading-tight">
-                      Good food begins with good roots.
+                      {language === 'bn' ? (siteSettings.roots_title_bn || 'শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।') : (siteSettings.roots_title_en || 'Good food begins with good roots.')}
                     </h3>
                     <p className="font-bengaliSerif font-semibold text-lg text-[#2D5F3F]">
-                      শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।
+                      {language === 'bn' ? (siteSettings.roots_title_en || 'Good food begins with good roots.') : (siteSettings.roots_title_bn || 'শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।')}
                     </p>
                     <p className="font-sans font-normal text-sm text-[#6b7280] leading-relaxed">
-                      Gramer Hat brings the familiar flavours of rural Bangladesh back to modern life. We work directly with generational growers, beekeepers and oil-millers across the country to protect pure culinary heritage.
+                      {siteSettings.roots_desc || 'Gramer Hat brings the familiar flavours of rural Bangladesh back to modern life. We work directly with generational growers, beekeepers and oil-millers across the country to protect pure culinary heritage.'}
                     </p>
 
                     {/* 3 Steps: 01, 02, 03 (Node 2:407 in Figma) */}

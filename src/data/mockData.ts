@@ -280,6 +280,36 @@ export const initialSiteSettings: SiteSettings = {
   developer_whatsapp_url: 'https://wa.me/8801647236359',
   admin_pin: 'admin123',
   moderator_pin: 'mod123',
+  admin_email: 'masumbilla03627@gmail.com',
+  admin_password: 'Gramerhat099665511',
+
+  // Hero Banner Customization
+  hero_badge_bn: 'শতভাগ খাঁটি প্রাকৃতিক কৃষিপণ্য',
+  hero_badge_en: 'Rooted in Nature · 100% Pure Harvest',
+  hero_title_bn: 'গ্রামের খাঁটি স্বাদ,\nএবার আপনার ঘরে।',
+  hero_title_en: 'Honest food. From our roots to your table.',
+  hero_subtitle_bn: 'সুন্দরবনের প্রাকৃতিক চাকের কাঁচা মধু, সিরাজগঞ্জের গাওয়া ঘি, ঘানি ভাঙা সরিষার তেল ও দিনাজপুরের পোলাও চাল সরাসরি কৃষকের মাঠ থেকে।',
+  hero_subtitle_en: 'Discover the goodness of Bangladesh — thoughtfully sourced honey, ghee, spices and pantry essentials directly from generational beekeepers and farmers.',
+  hero_image: '/assets/figma/harvest_table.jpeg',
+  hero_note_title: 'A taste of home.',
+  hero_note_subtitle: 'চেনা স্বাদ, নতুন আস্থায়',
+  ticker_text: 'সুন্দরবনের গভীর অরণ্যের চাকের খাঁটি মধু ● ঘানি ভাঙা কাঠের খাঁটি সরিষার তেল ● সিরাজগঞ্জের দেশি গাভীর বিলোনা গাওয়া ঘি ● যশোরের ঐতিহ্যবাহী খেজুরের নলেন পাটালি গুড় ● দিনাজপুরের সুগন্ধি চিনিগুঁড়া পোলাও চাল ● ১০০% রাসায়নিক ও ভেজালমুক্ত কৃষিপণ্য',
+
+  // Seasonal Feature Customization
+  seasonal_tag: 'A LITTLE TASTE OF TRADITION',
+  seasonal_title_bn: 'খেজুরের গুড়ে শীতের আমেজ',
+  seasonal_title_en: 'Winter’s sweetest tradition.',
+  seasonal_subtitle_bn: 'খেজুরের গুড়ে শীতের আমেজ',
+  seasonal_desc: 'Rich, caramel notes. Familiar winter memories, crafted the timeless way in the heart of Jessore.',
+  seasonal_image: '/assets/figma/cat_jaggery.jpeg',
+  seasonal_category_id: 'cat-5',
+
+  // Our Roots Customization
+  roots_tag: 'A LITTLE CLOSER TO OUR ROOTS',
+  roots_title_bn: 'শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।',
+  roots_title_en: 'Good food begins with good roots.',
+  roots_desc: 'Gramer Hat brings the familiar flavours of rural Bangladesh back to modern life. We work directly with generational growers, beekeepers and oil-millers across the country to protect pure culinary heritage.',
+  roots_image: '/assets/figma/bangladesh_harvest.jpeg',
 };
 
 export const initialOrders: Order[] = [

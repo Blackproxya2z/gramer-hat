@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
-import { Product, OrderStatus, ProductVariant } from '../types';
+import { Product, OrderStatus, ProductVariant, Category } from '../types';
 import { processProductImage, ProcessedImageResult } from '../utils/imageProcessor';
 import { 
   LayoutDashboard, 
@@ -31,6 +31,9 @@ import {
   Eye,
   EyeOff,
   Sparkles,
+  Palette,
+  Layers,
+  Globe,
   Image as ImageIcon
 } from 'lucide-react';
 
@@ -42,21 +45,28 @@ export const AdminCMS: React.FC = () => {
     addNewProduct, 
     updateProduct, 
     deleteProduct,
+    categories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
     siteSettings, 
     updateSiteSettings,
     language, 
     t,
     setViewMode,
-    categories,
     showToast,
     adminAuth,
     loginAdmin,
     logoutAdmin
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'customization' | 'products' | 'orders' | 'settings'>('dashboard');
 
-  // Security Login Gate State
+  // Security Login Gate State (Email/Password or PIN)
+  const [loginMode, setLoginMode] = useState<'credentials' | 'pin'>('credentials');
+  const [loginEmail, setLoginEmail] = useState('masumbilla03627@gmail.com');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginRole, setLoginRole] = useState<'admin' | 'moderator'>('admin');
   const [loginPin, setLoginPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -83,7 +93,44 @@ export const AdminCMS: React.FC = () => {
   const [isBestseller, setIsBestseller] = useState(false);
   const [isPreorder, setIsPreorder] = useState(false);
 
-  // Image Processing State (Auto-Framing 1:1 & PNG-to-JPG Conversion)
+  // Category Modal State
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [editingCat, setEditingCat] = useState<Category | null>(null);
+  const [catNameBn, setCatNameBn] = useState('');
+  const [catNameEn, setCatNameEn] = useState('');
+  const [catImage, setCatImage] = useState('');
+  const [catImageProcessing, setCatImageProcessing] = useState(false);
+
+  // Website Customization States (Hero, Seasonal, Roots, Marquee)
+  const [heroImage, setHeroImage] = useState(siteSettings.hero_image || '/assets/figma/harvest_table.jpeg');
+  const [heroTitleBn, setHeroTitleBn] = useState(siteSettings.hero_title_bn || 'গ্রামের খাঁটি স্বাদ,\nএবার আপনার ঘরে।');
+  const [heroTitleEn, setHeroTitleEn] = useState(siteSettings.hero_title_en || 'Honest food. From our roots to your table.');
+  const [heroSubtitleBn, setHeroSubtitleBn] = useState(siteSettings.hero_subtitle_bn || '');
+  const [heroSubtitleEn, setHeroSubtitleEn] = useState(siteSettings.hero_subtitle_en || '');
+  const [heroBadgeEn, setHeroBadgeEn] = useState(siteSettings.hero_badge_en || 'Rooted in Nature · 100% Pure Harvest');
+  const [heroBadgeBn, setHeroBadgeBn] = useState(siteSettings.hero_badge_bn || 'শতভাগ খাঁটি প্রাকৃতিক কৃষিপণ্য');
+  const [heroNoteTitle, setHeroNoteTitle] = useState(siteSettings.hero_note_title || 'A taste of home.');
+  const [heroNoteSubtitle, setHeroNoteSubtitle] = useState(siteSettings.hero_note_subtitle || 'চেনা স্বাদ, নতুন আস্থায়');
+  const [tickerText, setTickerText] = useState(siteSettings.ticker_text || '');
+  
+  const [seasonalTag, setSeasonalTag] = useState(siteSettings.seasonal_tag || 'A LITTLE TASTE OF TRADITION');
+  const [seasonalTitleBn, setSeasonalTitleBn] = useState(siteSettings.seasonal_title_bn || 'খেজুরের গুড়ে শীতের আমেজ');
+  const [seasonalTitleEn, setSeasonalTitleEn] = useState(siteSettings.seasonal_title_en || 'Winter’s sweetest tradition.');
+  const [seasonalDesc, setSeasonalDesc] = useState(siteSettings.seasonal_desc || '');
+  const [seasonalImage, setSeasonalImage] = useState(siteSettings.seasonal_image || '/assets/figma/cat_jaggery.jpeg');
+  const [seasonalCategoryId, setSeasonalCategoryId] = useState(siteSettings.seasonal_category_id || 'cat-5');
+
+  const [rootsTag, setRootsTag] = useState(siteSettings.roots_tag || 'A LITTLE CLOSER TO OUR ROOTS');
+  const [rootsTitleBn, setRootsTitleBn] = useState(siteSettings.roots_title_bn || 'শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।');
+  const [rootsTitleEn, setRootsTitleEn] = useState(siteSettings.roots_title_en || 'Good food begins with good roots.');
+  const [rootsDesc, setRootsDesc] = useState(siteSettings.roots_desc || '');
+  const [rootsImage, setRootsImage] = useState(siteSettings.roots_image || '/assets/figma/bangladesh_harvest.jpeg');
+
+  const [heroImageProcessing, setHeroImageProcessing] = useState(false);
+  const [seasonalImageProcessing, setSeasonalImageProcessing] = useState(false);
+  const [rootsImageProcessing, setRootsImageProcessing] = useState(false);
+
+  // Image Processing State for Products (Auto-Framing 1:1 & PNG-to-JPG Conversion)
   const [imageProcessing, setImageProcessing] = useState(false);
   const [imageConversionStats, setImageConversionStats] = useState<ProcessedImageResult | null>(null);
   const [manualUrlMode, setManualUrlMode] = useState(false);
@@ -107,16 +154,159 @@ export const AdminCMS: React.FC = () => {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-    if (!loginPin.trim()) {
-      setLoginError(language === 'bn' ? 'অনুগ্রহ করে সিকিউরিটি পিন কোড দিন' : 'Please enter security PIN');
-      return;
-    }
-    const res = loginAdmin(loginPin, loginRole);
-    if (!res.success) {
-      setLoginError(res.message);
+
+    if (loginMode === 'credentials') {
+      if (!loginEmail.trim() || !loginPassword.trim()) {
+        setLoginError(language === 'bn' ? 'অনুগ্রহ করে অ্যাডমিন ইমেইল ও পাসওয়ার্ড প্রদান করুন' : 'Please enter admin email and password');
+        return;
+      }
+      const res = loginAdmin({ email: loginEmail, password: loginPassword });
+      if (!res.success) {
+        setLoginError(res.message);
+      } else {
+        setLoginPassword('');
+      }
     } else {
-      setLoginPin('');
+      if (!loginPin.trim()) {
+        setLoginError(language === 'bn' ? 'অনুগ্রহ করে সিকিউরিটি পিন কোড দিন' : 'Please enter security PIN');
+        return;
+      }
+      const res = loginAdmin({ pin: loginPin, role: loginRole });
+      if (!res.success) {
+        setLoginError(res.message);
+      } else {
+        setLoginPin('');
+      }
     }
+  };
+
+  const handleHeroImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setHeroImageProcessing(true);
+      const res = await processProductImage(file, 1200, 0.85);
+      setHeroImage(res.dataUrl);
+      showToast(language === 'bn' ? '✓ হিরো ব্যানার ছবি সফলভাবে অপ্টিমাইজ হয়েছে!' : '✓ Hero banner image optimized!');
+    } catch {
+      showToast('Error processing hero image');
+    } finally {
+      setHeroImageProcessing(false);
+    }
+  };
+
+  const handleSeasonalImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setSeasonalImageProcessing(true);
+      const res = await processProductImage(file, 1000, 0.85);
+      setSeasonalImage(res.dataUrl);
+      showToast(language === 'bn' ? '✓ সিজনাল ব্যানার ছবি অপ্টিমাইজ হয়েছে!' : '✓ Seasonal image optimized!');
+    } catch {
+      showToast('Error processing seasonal image');
+    } finally {
+      setSeasonalImageProcessing(false);
+    }
+  };
+
+  const handleRootsImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setRootsImageProcessing(true);
+      const res = await processProductImage(file, 1000, 0.85);
+      setRootsImage(res.dataUrl);
+      showToast(language === 'bn' ? '✓ ব্র্যান্ড স্টোরি ছবি অপ্টিমাইজ হয়েছে!' : '✓ Roots story image optimized!');
+    } catch {
+      showToast('Error processing image');
+    } finally {
+      setRootsImageProcessing(false);
+    }
+  };
+
+  const handleCatImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setCatImageProcessing(true);
+      const res = await processProductImage(file, 400, 0.85);
+      setCatImage(res.dataUrl);
+      showToast(language === 'bn' ? '✓ ক্যাটাগরি ছবি অপ্টিমাইজ হয়েছে!' : '✓ Category image optimized!');
+    } catch {
+      showToast('Error processing category image');
+    } finally {
+      setCatImageProcessing(false);
+    }
+  };
+
+  const handleSaveCustomization = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSiteSettings({
+      hero_image: heroImage,
+      hero_title_bn: heroTitleBn,
+      hero_title_en: heroTitleEn,
+      hero_subtitle_bn: heroSubtitleBn,
+      hero_subtitle_en: heroSubtitleEn,
+      hero_badge_en: heroBadgeEn,
+      hero_badge_bn: heroBadgeBn,
+      hero_note_title: heroNoteTitle,
+      hero_note_subtitle: heroNoteSubtitle,
+      ticker_text: tickerText,
+      seasonal_tag: seasonalTag,
+      seasonal_title_bn: seasonalTitleBn,
+      seasonal_title_en: seasonalTitleEn,
+      seasonal_desc: seasonalDesc,
+      seasonal_image: seasonalImage,
+      seasonal_category_id: seasonalCategoryId,
+      roots_tag: rootsTag,
+      roots_title_bn: rootsTitleBn,
+      roots_title_en: rootsTitleEn,
+      roots_desc: rootsDesc,
+      roots_image: rootsImage,
+    });
+    showToast(language === 'bn' ? '✓ ওয়েবসাইটের ব্যানার ও কাস্টমাইজেশন সফলভাবে সেভ হয়েছে!' : '✓ Website banners and customization saved successfully!');
+  };
+
+  const handleOpenCatModal = (cat?: Category) => {
+    if (cat) {
+      setEditingCat(cat);
+      setCatNameBn(cat.name_bn);
+      setCatNameEn(cat.name_en);
+      setCatImage(cat.image);
+    } else {
+      setEditingCat(null);
+      setCatNameBn('');
+      setCatNameEn('');
+      setCatImage('https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=400&q=80');
+    }
+    setIsCatModalOpen(true);
+  };
+
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!catNameBn.trim() || !catNameEn.trim()) return;
+
+    if (editingCat) {
+      updateCategory({
+        ...editingCat,
+        name_bn: catNameBn,
+        name_en: catNameEn,
+        image: catImage || editingCat.image,
+      });
+    } else {
+      const newCat: Category = {
+        id: `cat-${Date.now()}`,
+        name_bn: catNameBn,
+        name_en: catNameEn,
+        slug: catNameEn.toLowerCase().replace(/\s+/g, '-'),
+        icon: '',
+        image: catImage || 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=400&q=80',
+        product_count: 0,
+      };
+      addCategory(newCat);
+    }
+    setIsCatModalOpen(false);
   };
 
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,122 +437,189 @@ export const AdminCMS: React.FC = () => {
           </div>
 
           {/* Login Card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 space-y-6">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 space-y-5">
             
-            {/* Role Picker */}
-            <div>
-              <label className="text-xs font-bold text-gray-700 block mb-2">
-                {t('অ্যাক্সেস রোল নির্বাচন করুন', 'Select Access Role')}
-              </label>
-              <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-2xl">
-                <button
-                  type="button"
-                  onClick={() => setLoginRole('admin')}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    loginRole === 'admin'
-                      ? 'bg-[#2D5F3F] text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Super Admin</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLoginRole('moderator')}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    loginRole === 'moderator'
-                      ? 'bg-[#2D5F3F] text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Moderator</span>
-                </button>
-              </div>
+            {/* Login Mode Tabs: Main Email & Password vs Quick PIN */}
+            <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-2xl text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setLoginMode('credentials')}
+                className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  loginMode === 'credentials'
+                    ? 'bg-[#2D5F3F] text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Super Admin (Email)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLoginMode('pin')}
+                className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  loginMode === 'pin'
+                    ? 'bg-[#2D5F3F] text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Key className="w-3.5 h-3.5" />
+                <span>PIN Code Access</span>
+              </button>
             </div>
 
             {/* Login Form */}
             <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1.5">
-                  {loginRole === 'admin'
-                    ? t('সুপার অ্যাডমিন পিন / পাসওয়ার্ড', 'Super Admin PIN')
-                    : t('মডারেটর পিন / পাসওয়ার্ড', 'Moderator PIN')}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPin ? 'text' : 'password'}
-                    value={loginPin}
-                    onChange={(e) => setLoginPin(e.target.value)}
-                    placeholder={loginRole === 'admin' ? 'admin123' : 'mod123'}
-                    autoFocus
-                    className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-[#2D5F3F] focus:border-transparent transition-all"
-                  />
-                  <Key className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                  <button
-                    type="button"
-                    onClick={() => setShowPin(!showPin)}
-                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+              
+              {loginMode === 'credentials' ? (
+                <>
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('মেইন অ্যাডমিন ইমেইল *', 'Main Admin Email *')}
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="masumbilla03627@gmail.com"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#2D5F3F]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('অ্যাডমিন পাসওয়ার্ড *', 'Admin Password *')}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="••••••••••••••"
+                        className="w-full px-3.5 py-2.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#2D5F3F]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick autofill helper */}
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 flex items-center justify-between">
+                    <span className="font-semibold">{t('মেইন অ্যাডমিন ক্রেডেনশিয়াল:', 'Main Admin Credentials:')}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('masumbilla03627@gmail.com');
+                        setLoginPassword('Gramerhat099665511');
+                      }}
+                      className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] cursor-pointer"
+                    >
+                      {t('অটোফিল করুন', 'Auto-Fill')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                      {t('অ্যাক্সেস রোল নির্বাচন করুন', 'Select Access Role')}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-xl text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setLoginRole('admin')}
+                        className={`py-1.5 rounded-lg transition-all ${
+                          loginRole === 'admin' ? 'bg-[#2D5F3F] text-white' : 'text-gray-600'
+                        }`}
+                      >
+                        Super Admin
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLoginRole('moderator')}
+                        className={`py-1.5 rounded-lg transition-all ${
+                          loginRole === 'moderator' ? 'bg-[#2D5F3F] text-white' : 'text-gray-600'
+                        }`}
+                      >
+                        Moderator
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('পিন কোড *', 'PIN Code *')}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPin ? 'text' : 'password'}
+                        value={loginPin}
+                        onChange={(e) => setLoginPin(e.target.value)}
+                        placeholder={loginRole === 'admin' ? 'admin123' : 'mod123'}
+                        className="w-full px-3.5 py-2.5 pr-10 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-[#2D5F3F]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPin(!showPin)}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 text-[10px] font-mono">
+                    <button
+                      type="button"
+                      onClick={() => setLoginPin('admin123')}
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold cursor-pointer"
+                    >
+                      Admin PIN: admin123
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginPin('mod123')}
+                      className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold cursor-pointer"
+                    >
+                      Mod PIN: mod123
+                    </button>
+                  </div>
+                </>
+              )}
 
               {loginError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2 font-medium">
                   <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
                   <span>{loginError}</span>
                 </div>
               )}
 
-              {/* Quick Demo Credentials for Fast Testing */}
-              <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl text-[11px] text-emerald-900 space-y-1.5">
-                <span className="font-bold flex items-center gap-1 text-[#2D5F3F]">
-                  <Lock className="w-3 h-3" />
-                  {t('দ্রুত টেস্ট করার জন্য ডিফল্ট পিন:', 'Default Testing Credentials:')}
-                </span>
-                <div className="flex flex-wrap gap-2 pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginRole('admin');
-                      setLoginPin('admin123');
-                    }}
-                    className="px-2 py-1 bg-white border border-emerald-200 rounded-lg font-mono text-[10px] font-bold text-gray-800 hover:bg-emerald-100 transition-colors cursor-pointer"
-                  >
-                    Admin: <span className="text-[#2D5F3F]">admin123</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginRole('moderator');
-                      setLoginPin('mod123');
-                    }}
-                    className="px-2 py-1 bg-white border border-emerald-200 rounded-lg font-mono text-[10px] font-bold text-gray-800 hover:bg-emerald-100 transition-colors cursor-pointer"
-                  >
-                    Mod: <span className="text-[#2D5F3F]">mod123</span>
-                  </button>
-                </div>
-              </div>
-
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-2xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Unlock className="w-4 h-4" />
-                <span>{t('সিএমএস প্যানেলে লগইন করুন', 'Authenticate & Login')}</span>
+                <span>{t('সিএমএস প্যানেলে প্রবেশ করুন', 'Authenticate & Access CMS')}</span>
               </button>
             </form>
 
             {/* Back to storefront link */}
             <div className="pt-2 text-center">
               <button
-                onClick={() => setViewMode('store')}
-                className="text-xs text-gray-500 hover:text-[#2D5F3F] font-medium underline cursor-pointer"
+                onClick={() => {
+                  window.location.hash = '';
+                  setViewMode('store');
+                }}
+                className="text-xs text-gray-500 hover:text-[#2D5F3F] font-semibold underline cursor-pointer"
               >
-                ← {t('স্টোরফ্রন্টে ফিরে যান', 'Back to Storefront')}
+                ← {t('গ্রাহক স্টোরফ্রন্টে ফিরে যান', 'Return to Storefront')}
               </button>
             </div>
 
@@ -417,14 +674,21 @@ export const AdminCMS: React.FC = () => {
         {/* User Info & Actions */}
         <div className="flex items-center gap-2.5 text-xs">
           <button
-            onClick={() => setViewMode('store')}
+            onClick={() => {
+              window.location.hash = '';
+              setViewMode('store');
+            }}
             className="px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white font-bold transition-colors cursor-pointer"
           >
-            {t('স্টোরফ্রন্টে যান →', 'View Storefront →')}
+            {t('ওয়েবসাইট দেখুন →', 'View Storefront →')}
           </button>
 
           <button
-            onClick={logoutAdmin}
+            onClick={() => {
+              logoutAdmin();
+              window.location.hash = '';
+              setViewMode('store');
+            }}
             className="px-3 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-600 text-white font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
             title="Log out of CMS"
           >
@@ -441,7 +705,7 @@ export const AdminCMS: React.FC = () => {
         <div className="flex border-b border-gray-200 gap-2 sm:gap-4 overflow-x-auto pb-1 mb-6">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'dashboard'
                 ? 'bg-[#2D5F3F] text-white shadow-md'
                 : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -451,9 +715,23 @@ export const AdminCMS: React.FC = () => {
             <span>{t('ড্যাশবোর্ড', 'Dashboard')}</span>
           </button>
 
+          {role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('customization')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
+                activeTab === 'customization'
+                  ? 'bg-[#2D5F3F] text-white shadow-md'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              }`}
+            >
+              <Palette className="w-4 h-4 text-[#F4A261]" />
+              <span>{t('ওয়েবসাইট ও ব্যানার', 'Website & Banners')}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setActiveTab('products')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'products'
                 ? 'bg-[#2D5F3F] text-white shadow-md'
                 : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -468,7 +746,7 @@ export const AdminCMS: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
               activeTab === 'orders'
                 ? 'bg-[#2D5F3F] text-white shadow-md'
                 : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -486,7 +764,7 @@ export const AdminCMS: React.FC = () => {
           {role === 'admin' && (
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === 'settings'
                   ? 'bg-[#2D5F3F] text-white shadow-md'
                   : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -664,6 +942,699 @@ export const AdminCMS: React.FC = () => {
 
             </div>
 
+          </div>
+        )}
+
+        {/* TAB: WEBSITE CUSTOMIZATION & BANNERS */}
+        {activeTab === 'customization' && (
+          <div className="space-y-8">
+            
+            {/* Header & Quick Save Bar */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-emerald-50 text-[#2D5F3F]">
+                    <Palette className="w-5 h-5" />
+                  </span>
+                  <h3 className="font-bold text-lg text-[#1A1A1A]">
+                    {t('ওয়েবসাইট কাস্টমাইজেশন ও ব্যানার কন্ট্রোল', 'Website Customization & Banner Control')}
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {t(
+                    'হিরো ব্যানার, বিজ্ঞাপনী ছবি, ব্র্যান্ডের গল্প ও ক্যাটাগরি সরাসরি ফোন বা কম্পিউটার থেকে পরিবর্তন করুন।',
+                    'Customize hero banners, promotional visuals, brand story, and categories live from your phone or PC.'
+                  )}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveCustomization}
+                className="px-6 py-2.5 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <Check className="w-4 h-4" />
+                <span>{t('সব পরিবর্তন সংরক্ষণ করুন', 'Save All Customizations')}</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomization} className="space-y-8">
+              
+              {/* SECTION 1: HERO BANNER & PRESENTATION */}
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#2D5F3F]/10 text-[#2D5F3F] flex items-center justify-center font-bold text-sm">
+                      1
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1A1A1A]">
+                        {t('হিরো ব্যানার ও মূল শিরোনাম', 'Hero Banner & Main Headline')}
+                      </h4>
+                      <p className="text-[11px] text-gray-500">
+                        {t('ওয়েবসাইটের প্রথম দৃশ্যমান ব্যানার ছবি, টেক্সট এবং রানিং নোটিশ', 'The topmost visual banner, headline, and announcement ticker')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    {t('প্রথম স্ক্রিন', 'Above the Fold')}
+                  </span>
+                </div>
+
+                {/* Hero Banner Image Upload */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-[#2D5F3F]" />
+                      <span>{t('হিরো ব্যানার ছবি (ফোন ক্যামেরা / ফাইল আপলোড)', 'Hero Banner Image (Camera / File Upload)')}</span>
+                    </label>
+                    <span className="text-[11px] text-gray-500 font-mono">
+                      Recommended: 1200×800 or 16:9 ratio
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                    {/* Image Preview */}
+                    <div className="md:col-span-5 relative h-48 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 bg-gray-50 group">
+                      {heroImage ? (
+                        <>
+                          <img
+                            src={heroImage}
+                            alt="Hero Banner Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <label
+                              htmlFor="cms-hero-image-file"
+                              className="px-3 py-1.5 rounded-xl bg-white text-gray-900 text-xs font-bold shadow-lg cursor-pointer hover:bg-gray-100 flex items-center gap-1.5"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>{t('পরিবর্তন করুন', 'Change')}</span>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setHeroImage('/assets/figma/harvest_table.jpeg')}
+                              className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold shadow-lg cursor-pointer hover:bg-red-700"
+                            >
+                              {t('রিসেট', 'Reset')}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
+                          <ImageIcon className="w-8 h-8 mb-1" />
+                          <span className="text-xs">{t('কোনো ছবি নেই', 'No image selected')}</span>
+                        </div>
+                      )}
+                      {heroImageProcessing && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                          <RefreshCw className="w-6 h-6 text-[#2D5F3F] animate-spin" />
+                          <span className="text-xs font-bold text-[#2D5F3F]">
+                            {t('ছবি প্রসেস হচ্ছে...', 'Optimizing & resizing...')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Upload Controls */}
+                    <div className="md:col-span-7 space-y-3">
+                      <label
+                        htmlFor="cms-hero-image-file"
+                        className={`block border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+                          heroImageProcessing
+                            ? 'bg-emerald-50 border-emerald-400 animate-pulse'
+                            : 'bg-gray-50 border-gray-300 hover:border-[#2D5F3F] hover:bg-emerald-50/40'
+                        }`}
+                      >
+                        <input
+                          id="cms-hero-image-file"
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handleHeroImageChange}
+                          disabled={heroImageProcessing}
+                          className="hidden"
+                        />
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-[#2D5F3F] flex items-center justify-center mx-auto mb-2">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <p className="font-bold text-xs text-gray-800">
+                          {t('ফোন থেকে নতুন ছবি তুলুন বা গ্যালারি থেকে সিলেক্ট করুন', 'Take photo or choose banner from gallery')}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
+                          {t('স্বয়ংক্রিয়ভাবে ১২০০ পিক্সেল ও উচ্চ মানের JPG তে কমপ্রেস হবে', 'Auto-optimizes to 1200px web JPG for instant loading')}
+                        </p>
+                      </label>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-600 block mb-1">
+                          {t('অথবা সরাসরি ছবির URL দিন:', 'Or direct Image URL:')}
+                        </label>
+                        <input
+                          type="text"
+                          value={heroImage}
+                          onChange={(e) => setHeroImage(e.target.value)}
+                          placeholder="https://... বা /assets/figma/harvest_table.jpeg"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hero Headlines & Text */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('মূল শিরোনাম (বাংলা)', 'Main Headline (Bengali)')}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={heroTitleBn}
+                      onChange={(e) => setHeroTitleBn(e.target.value)}
+                      placeholder="গ্রামের খাঁটি স্বাদ,\nএবার আপনার ঘরে।"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bengaliSerif leading-snug"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-0.5">{t('নতুন লাইন দিতে Enter চাপুন', 'Press Enter for newline')}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('মূল শিরোনাম (English)', 'Main Headline (English)')}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={heroTitleEn}
+                      onChange={(e) => setHeroTitleEn(e.target.value)}
+                      placeholder="Honest food. From our roots to your table."
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs leading-snug"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('সাবটাইটেল / বিবরণ (বাংলা)', 'Subtitle / Description (Bengali)')}
+                    </label>
+                    <input
+                      type="text"
+                      value={heroSubtitleBn}
+                      onChange={(e) => setHeroSubtitleBn(e.target.value)}
+                      placeholder="গ্রামের বিশ্বস্ত কৃষকদের সরাসরি উৎপাদন..."
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('সাবটাইটেল / বিবরণ (English)', 'Subtitle / Description (English)')}
+                    </label>
+                    <input
+                      type="text"
+                      value={heroSubtitleEn}
+                      onChange={(e) => setHeroSubtitleEn(e.target.value)}
+                      placeholder="Direct from heritage farmers..."
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('শীর্ষ ব্যাজ টেক্সট (বাংলা)', 'Top Badge Text (Bengali)')}
+                    </label>
+                    <input
+                      type="text"
+                      value={heroBadgeBn}
+                      onChange={(e) => setHeroBadgeBn(e.target.value)}
+                      placeholder="শতভাগ খাঁটি প্রাকৃতিক কৃষিপণ্য"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">
+                      {t('শীর্ষ ব্যাজ টেক্সট (English)', 'Top Badge Text (English)')}
+                    </label>
+                    <input
+                      type="text"
+                      value={heroBadgeEn}
+                      onChange={(e) => setHeroBadgeEn(e.target.value)}
+                      placeholder="Rooted in Nature · 100% Pure Harvest"
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Floating Brand Promise Card Note */}
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+                  <h5 className="font-bold text-xs text-amber-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                    <span>{t('হিরো ব্যানারের ভাসমান ব্র্যান্ড কার্ড (Brand Promise Card)', 'Floating Hero Brand Card')}</span>
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] font-bold text-amber-800 block mb-1">
+                        {t('কার্ড শিরোনাম (English/Title)', 'Card Title')}
+                      </label>
+                      <input
+                        type="text"
+                        value={heroNoteTitle}
+                        onChange={(e) => setHeroNoteTitle(e.target.value)}
+                        placeholder="A taste of home."
+                        className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-serif"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-amber-800 block mb-1">
+                        {t('কার্ড সাবটাইটেল (বাংলা/Subtitle)', 'Card Subtitle')}
+                      </label>
+                      <input
+                        type="text"
+                        value={heroNoteSubtitle}
+                        onChange={(e) => setHeroNoteSubtitle(e.target.value)}
+                        placeholder="চেনা স্বাদ, নতুন আস্থায়"
+                        className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Animated Marquee Ticker */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-xs font-bold text-gray-700 block">
+                    {t('রানিং নোটিশ বার / এনিমেটেড টিকার (Ticker Announcement Bar)', 'Running Marquee Ticker Bar')}
+                  </label>
+                  <input
+                    type="text"
+                    value={tickerText}
+                    onChange={(e) => setTickerText(e.target.value)}
+                    placeholder="খাঁটি সুন্দরবনের মধু · ঘানি ভাঙা সরিষার তেল · নতুন নলেন গুড় · দেশজুড়ে হোম ডেলিভারি"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium"
+                  />
+                  <p className="text-[10px] text-gray-400">
+                    {t('প্রতিটি বিষয় আলাদা করতে মাঝে ডট ( · ) বা পাইপ ( | ) ব্যবহার করতে পারেন।', 'Separate points using dots ( · ) or pipes ( | ) for the animated scrolling ticker.')}
+                  </p>
+                </div>
+              </div>
+
+              {/* SECTION 2: SEASONAL PROMOTION BANNER */}
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#F4A261]/20 text-[#D97706] flex items-center justify-center font-bold text-sm">
+                      2
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1A1A1A]">
+                        {t('সিজনাল ব্যানার সেকশন (Seasonal Promotion Feature)', 'Seasonal Promotion Banner')}
+                      </h4>
+                      <p className="text-[11px] text-gray-500">
+                        {t('ঋতুভিত্তিক বিশেষ ক্যাম্পেইন (যেমন: শীতের গুড় বা আমের সিজন)', 'Seasonal campaign spotlight (e.g. Winter Jaggery or Summer Mango)')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full">
+                    {t('সিজনাল ফিচার', 'Seasonal Spotlight')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                  {/* Photo Upload & Preview */}
+                  <div className="md:col-span-5 space-y-3">
+                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-[#2D5F3F]" />
+                      <span>{t('সিজনাল ফিচার ছবি', 'Seasonal Feature Photo')}</span>
+                    </label>
+
+                    <div className="relative h-44 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group">
+                      <img
+                        src={seasonalImage}
+                        alt="Seasonal Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <label
+                          htmlFor="cms-seasonal-image-file"
+                          className="px-3 py-1.5 rounded-xl bg-white text-gray-900 text-xs font-bold shadow-lg cursor-pointer hover:bg-gray-100 flex items-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{t('ছবি আপলোড', 'Upload')}</span>
+                        </label>
+                      </div>
+                      {seasonalImageProcessing && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                          <RefreshCw className="w-6 h-6 text-[#2D5F3F] animate-spin" />
+                          <span className="text-xs font-bold text-[#2D5F3F]">{t('ছবি অপ্টিমাইজ হচ্ছে...', 'Optimizing...')}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <label
+                      htmlFor="cms-seasonal-image-file"
+                      className="block w-full py-2 px-3 border border-gray-200 rounded-xl text-center text-xs font-bold text-gray-700 bg-gray-50 hover:bg-emerald-50 hover:border-[#2D5F3F] cursor-pointer transition-colors"
+                    >
+                      <input
+                        id="cms-seasonal-image-file"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleSeasonalImageChange}
+                        disabled={seasonalImageProcessing}
+                        className="hidden"
+                      />
+                      {t('ফোন ক্যামেরা বা গ্যালারি থেকে সিলেক্ট করুন', 'Take photo or choose from gallery')}
+                    </label>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 block mb-0.5">
+                        {t('ছবির URL লিঙ্ক', 'Image URL')}
+                      </label>
+                      <input
+                        type="text"
+                        value={seasonalImage}
+                        onChange={(e) => setSeasonalImage(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Texts & Linked Category */}
+                  <div className="md:col-span-7 space-y-3.5">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        {t('সিজনাল ট্যাগ / ব্যাজ (Tag)', 'Tag Badge')}
+                      </label>
+                      <input
+                        type="text"
+                        value={seasonalTag}
+                        onChange={(e) => setSeasonalTag(e.target.value)}
+                        placeholder="A LITTLE TASTE OF TRADITION"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs uppercase tracking-wider font-bold"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-gray-700 block mb-1">
+                          {t('শিরোনাম (বাংলা)', 'Title (Bengali)')}
+                        </label>
+                        <input
+                          type="text"
+                          value={seasonalTitleBn}
+                          onChange={(e) => setSeasonalTitleBn(e.target.value)}
+                          placeholder="খেজুরের গুড়ে শীতের আমেজ"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold font-bengaliSerif"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-700 block mb-1">
+                          {t('শিরোনাম (English)', 'Title (English)')}
+                        </label>
+                        <input
+                          type="text"
+                          value={seasonalTitleEn}
+                          onChange={(e) => setSeasonalTitleEn(e.target.value)}
+                          placeholder="Winter’s sweetest tradition."
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        {t('বিবরণ / ক্যাম্পেইন বার্তা', 'Description / Message')}
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={seasonalDesc}
+                        onChange={(e) => setSeasonalDesc(e.target.value)}
+                        placeholder="গাছিদের নিজ হাতে সংগ্রহ করা খেজুরের রসে তৈরি খাঁটি ঝোলা ও পাটালি গুড়..."
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs leading-relaxed"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        {t('ক্লিক করলে কোন ক্যাটাগরিতে যাবে (Target Category)', 'Target Category on Button Click')}
+                      </label>
+                      <select
+                        value={seasonalCategoryId}
+                        onChange={(e) => setSeasonalCategoryId(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold"
+                      >
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {language === 'bn' ? c.name_bn : c.name_en} ({c.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: OUR ROOTS & HERITAGE STORY */}
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-800 text-white flex items-center justify-center font-bold text-sm">
+                      3
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1A1A1A]">
+                        {t('আমাদের শিকড় ও ব্র্যান্ড স্টোরি (Our Roots & Story)', 'Our Roots & Heritage Story')}
+                      </h4>
+                      <p className="text-[11px] text-gray-500">
+                        {t('হোমপেজের নিচের অংশের ব্র্যান্ড পরিচিতি ও বিশ্বস্ততার সেকশন', 'Brand ethos and farmer connection section near page footer')}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    {t('ব্র্যান্ড পরিচিতি', 'Brand Ethos')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                  {/* Roots Image */}
+                  <div className="md:col-span-5 space-y-3">
+                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-[#2D5F3F]" />
+                      <span>{t('ব্র্যান্ড স্টোরির ছবি', 'Brand Story Photo')}</span>
+                    </label>
+
+                    <div className="relative h-44 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 group">
+                      <img
+                        src={rootsImage}
+                        alt="Roots Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <label
+                          htmlFor="cms-roots-image-file"
+                          className="px-3 py-1.5 rounded-xl bg-white text-gray-900 text-xs font-bold shadow-lg cursor-pointer hover:bg-gray-100 flex items-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{t('ছবি পরিবর্তন', 'Change')}</span>
+                        </label>
+                      </div>
+                      {rootsImageProcessing && (
+                        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
+                          <RefreshCw className="w-6 h-6 text-[#2D5F3F] animate-spin" />
+                          <span className="text-xs font-bold text-[#2D5F3F]">{t('ছবি অপ্টিমাইজ হচ্ছে...', 'Optimizing...')}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <label
+                      htmlFor="cms-roots-image-file"
+                      className="block w-full py-2 px-3 border border-gray-200 rounded-xl text-center text-xs font-bold text-gray-700 bg-gray-50 hover:bg-emerald-50 hover:border-[#2D5F3F] cursor-pointer transition-colors"
+                    >
+                      <input
+                        id="cms-roots-image-file"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleRootsImageChange}
+                        disabled={rootsImageProcessing}
+                        className="hidden"
+                      />
+                      {t('ফোন ক্যামেরা বা গ্যালারি থেকে ছবি নিন', 'Take photo or choose from gallery')}
+                    </label>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 block mb-0.5">
+                        {t('ছবির URL লিঙ্ক', 'Image URL')}
+                      </label>
+                      <input
+                        type="text"
+                        value={rootsImage}
+                        onChange={(e) => setRootsImage(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Roots Texts */}
+                  <div className="md:col-span-7 space-y-3.5">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        {t('ট্যাগ ব্যাজ (Tag)', 'Tag Badge')}
+                      </label>
+                      <input
+                        type="text"
+                        value={rootsTag}
+                        onChange={(e) => setRootsTag(e.target.value)}
+                        placeholder="A LITTLE CLOSER TO OUR ROOTS"
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs uppercase tracking-wider font-bold"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-gray-700 block mb-1">
+                          {t('শিরোনাম (বাংলা)', 'Title (Bengali)')}
+                        </label>
+                        <input
+                          type="text"
+                          value={rootsTitleBn}
+                          onChange={(e) => setRootsTitleBn(e.target.value)}
+                          placeholder="শিকড়ের টানে, খাঁটি খাবারের সন্ধানে।"
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold font-bengaliSerif"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-700 block mb-1">
+                          {t('শিরোনাম (English)', 'Title (English)')}
+                        </label>
+                        <input
+                          type="text"
+                          value={rootsTitleEn}
+                          onChange={(e) => setRootsTitleEn(e.target.value)}
+                          placeholder="Good food begins with good roots."
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">
+                        {t('আমাদের গল্প ও অঙ্গীকারের বর্ণনা', 'Story & Heritage Description')}
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={rootsDesc}
+                        onChange={(e) => setRootsDesc(e.target.value)}
+                        placeholder="আমরা বিশ্বাস করি প্রকৃতির খাঁটি খাবারের কোনো বিকল্প নেই। প্রতিটি পণ্য সরাসরি সংগ্রহ করা হয় গ্রাম বাংলার বিশ্বস্ত কৃষক ও মৌয়ালদের থেকে..."
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: PRODUCT CATEGORIES MANAGEMENT */}
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">
+                      4
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1A1A1A]">
+                        {t('ক্যাটাগরি ব্যবস্থাপনা (Product Categories & Photos)', 'Categories Management')}
+                      </h4>
+                      <p className="text-[11px] text-gray-500">
+                        {t('ওয়েবসাইটের গোল ক্যাটাগরি আইকন, নাম ও ছবি নিয়ন্ত্রণ করুন', 'Manage circular category items, names, and photos')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCatModal()}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('নতুন ক্যাটাগরি যোগ করুন', 'Add New Category')}</span>
+                  </button>
+                </div>
+
+                {/* Categories Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map((cat) => {
+                    const count = products.filter(p => p.category_id === cat.id).length;
+                    return (
+                      <div
+                        key={cat.id}
+                        className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#2D5F3F] transition-all flex items-center justify-between gap-3 shadow-xs"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={cat.image}
+                            alt={cat.name_en}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-[#2D5F3F]/30 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-bold text-xs text-gray-900 truncate">
+                              {cat.name_bn}
+                            </p>
+                            <p className="text-[11px] text-gray-500 truncate">
+                              {cat.name_en}
+                            </p>
+                            <span className="text-[10px] text-emerald-800 font-semibold">
+                              {count} {t('টি পণ্য', 'products')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCatModal(cat)}
+                            className="p-2 rounded-lg bg-gray-100 hover:bg-[#2D5F3F] hover:text-white text-gray-600 transition-colors cursor-pointer"
+                            title={t('সম্পাদনা করুন', 'Edit Category')}
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(language === 'bn' ? `আপনি কি "${cat.name_bn}" ক্যাটাগরি মুছে ফেলতে চান?` : `Delete category "${cat.name_en}"?`)) {
+                                deleteCategory(cat.id);
+                                showToast(language === 'bn' ? '✓ ক্যাটাগরি সফলভাবে মুছে ফেলা হয়েছে!' : '✓ Category deleted successfully!');
+                              }
+                            }}
+                            className="p-2 rounded-lg bg-gray-100 hover:bg-red-500 hover:text-white text-gray-400 transition-colors cursor-pointer"
+                            title={t('মুছে ফেলুন', 'Delete')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sticky / Final Save Button */}
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-xs text-gray-800">
+                    {t('সকল তথ্য হালনাগাদ প্রস্তুত?', 'Ready to publish changes?')}
+                  </p>
+                  <p className="text-[11px] text-gray-500">
+                    {t('ক্লিক করার সাথে সাথে ওয়েবসাইটে তাৎক্ষণিক লাইভ আপডেট হবে।', 'Changes will immediately apply and persist across user visits.')}
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>{t('ওয়েবসাইট কাস্টমাইজেশন সেভ করুন', 'Save Website Customizations')}</span>
+                </button>
+              </div>
+
+            </form>
           </div>
         )}
 
@@ -1333,6 +2304,134 @@ export const AdminCMS: React.FC = () => {
                 </button>
               </div>
 
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Category Modal */}
+      {isCatModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 space-y-4">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <h3 className="font-bold text-base text-gray-900">
+                {editingCat ? t('ক্যাটাগরি সম্পাদনা করুন', 'Edit Category') : t('নতুন ক্যাটাগরি যুক্ত করুন', 'Add New Category')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCatModalOpen(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">
+                  {t('ক্যাটাগরির নাম (বাংলা) *', 'Category Name (Bengali) *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={catNameBn}
+                  onChange={(e) => setCatNameBn(e.target.value)}
+                  placeholder="যেমন: খাঁটি মধু ও গুড়"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold font-bengaliSerif"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">
+                  {t('ক্যাটাগরির নাম (English) *', 'Category Name (English) *')}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={catNameEn}
+                  onChange={(e) => setCatNameEn(e.target.value)}
+                  placeholder="e.g. Raw Honey & Jaggery"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold"
+                />
+              </div>
+
+              {/* Category Image upload & preview */}
+              <div className="space-y-2">
+                <label className="font-bold text-gray-700 flex items-center gap-1.5">
+                  <Camera className="w-3.5 h-3.5 text-[#2D5F3F]" />
+                  <span>{t('ক্যাটাগরি ছবি (গোল আইকন)', 'Category Circular Photo')}</span>
+                </label>
+
+                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl border border-gray-200">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#2D5F3F] bg-white shrink-0 shadow-sm">
+                    {catImage ? (
+                      <img src={catImage} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageIcon className="w-6 h-6" />
+                      </div>
+                    )}
+                    {catImageProcessing && (
+                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                        <RefreshCw className="w-4 h-4 text-[#2D5F3F] animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <label
+                      htmlFor="cms-cat-image-file"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-300 hover:border-[#2D5F3F] text-gray-800 text-[11px] font-bold shadow-xs cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-[#2D5F3F]" />
+                      <span>{t('ছবি তুলুন / আপলোড করুন', 'Take / Upload Photo')}</span>
+                    </label>
+                    <input
+                      id="cms-cat-image-file"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleCatImageChange}
+                      disabled={catImageProcessing}
+                      className="hidden"
+                    />
+                    <p className="text-[10px] text-gray-500">
+                      {t('স্বয়ংক্রিয়ভাবে ৪০০×৪০০ গোল ফ্রেম ও JPG তে কনভার্ট হবে', 'Auto-optimizes to 400x400 circular JPG')}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 block mb-0.5">
+                    {t('অথবা সরাসরি ছবির URL দিন:', 'Or direct Image URL:')}
+                  </label>
+                  <input
+                    type="text"
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCatModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold cursor-pointer"
+                >
+                  {t('বাতিল', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#2D5F3F] hover:bg-[#1e402a] text-white font-bold cursor-pointer shadow-sm"
+                >
+                  {t('ক্যাটাগরি সংরক্ষণ করুন', 'Save Category')}
+                </button>
+              </div>
             </form>
 
           </div>

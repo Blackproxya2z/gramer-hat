@@ -128,6 +128,13 @@ export const Header: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && ['admin', '/admin', 'cms'].includes(searchQuery.trim().toLowerCase())) {
+                    window.location.hash = '#admin';
+                    setViewMode('admin');
+                    setSearchQuery('');
+                  }
+                }}
                 placeholder="Search honey, ghee, spices, rice..."
                 className="w-full px-4 py-2.5 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-sm text-[#1A1A1A] placeholder-[#6b7280] focus:outline-none focus:ring-1 focus:ring-[#2D5F3F] focus:border-[#2D5F3F] transition-all"
               />
@@ -169,18 +176,6 @@ export const Header: React.FC = () => {
               <span>SINI IT →</span>
             </a>
 
-            {/* Admin CMS Toggle */}
-            <button
-              onClick={() => setViewMode(viewMode === 'admin' ? 'store' : 'admin')}
-              className={`hidden sm:flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'admin'
-                  ? 'bg-[#F4A261] text-[#1A1A1A]'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span>{viewMode === 'admin' ? 'Storefront' : 'CMS Admin'}</span>
-            </button>
-
             {/* Mobile PWA Sim */}
             <button
               onClick={() => setIsMobileFrame(!isMobileFrame)}
@@ -213,6 +208,13 @@ export const Header: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && ['admin', '/admin', 'cms'].includes(searchQuery.trim().toLowerCase())) {
+                  window.location.hash = '#admin';
+                  setViewMode('admin');
+                  setSearchQuery('');
+                }
+              }}
               placeholder="Search honey, ghee, spices, rice..."
               className="w-full px-3.5 py-2 bg-[#fafafa] border border-[#e5e7eb] rounded-lg text-xs"
             />

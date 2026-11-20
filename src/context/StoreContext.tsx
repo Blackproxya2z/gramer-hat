@@ -70,8 +70,15 @@ interface StoreContextType {
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
 
+  addCategory: (category: Category) => void;
+  updateCategory: (category: Category) => void;
+  deleteCategory: (id: string) => void;
+
   adminAuth: AdminAuth;
-  loginAdmin: (pin: string, requestedRole: 'admin' | 'moderator') => { success: boolean; message: string };
+  loginAdmin: (
+    credentials: { email?: string; password?: string; pin?: string; role?: 'admin' | 'moderator' } | string,
+    requestedRole?: 'admin' | 'moderator'
+  ) => { success: boolean; message: string };
   logoutAdmin: () => void;
 
   toastMessage: string | null;
@@ -85,7 +92,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
   const [isMobileFrame, setIsMobileFrame] = useState<boolean>(false);
   
-  const [categories] = useState<Category[]>(initialCategories);
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const saved = localStorage.getItem('gh_categories');
+    return saved ? JSON.parse(saved) : initialCategories;
+  });
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('gh_products');
     return saved ? JSON.parse(saved) : initialProducts;
@@ -157,6 +167,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('gh_settings', JSON.stringify(siteSettings));
   }, [siteSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('gh_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const toggleLanguage = () => {
     setLanguage(prev => (prev === 'bn' ? 'en' : 'bn'));
@@ -341,30 +355,104 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast(language === 'bn' ? 'পণ্য মুছে ফেলা হয়েছে!' : 'Product deleted!');
   };
 
-  const loginAdmin = (pin: string, requestedRole: 'admin' | 'moderator') => {
-    const cleanPin = pin.trim();
-    const effectiveAdminPin = siteSettings.admin_pin || 'admin123';
-    const effectiveModPin = siteSettings.moderator_pin || 'mod123';
+  const addCategory = (category: Category) => {
+    setCategories(prev => [...prev, category]);
+    showToast(language === 'bn' ? 'নতুন ক্যাটাগরি যুক্ত হয়েছে!' : 'New category added!');
+  };
+
+  const updateCategory = (category: Category) => {
+    setCategories(prev => prev.map(c => (c.id === category.id ? category : c)));
+    showToast(language === 'bn' ? 'ক্যাটাগরি সফলভাবে আপডেট হয়েছে!' : 'Category updated!');
+  };
+
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+    showToast(language === 'bn' ? 'ক্যাটাগরি মুছে ফেলা হয়েছে!' : 'Category deleted!');
+  };
+
+  const loginAdmin = (
+    credentials: { email?: string; password?: string; pin?: string; role?: 'admin' | 'moderator' } | string,
+    requestedRole: 'admin' | 'moderator' = 'admin'
+  ) => {
+    // Check lockout protection
+    const lockoutUntil = Number(localStorage.getItem('gh_admin_lockout_until') || '0');
+    if (lockoutUntil > Date.now()) {
+      const remainingMinutes = Math.ceil((lockoutUntil - Date.now()) / (60 * 1000));
+      return {
+        success: false,
+        message: language === 'bn'
+          ? `অতিরিক্ত ভুল চেষ্টার কারণে এক্সেস লক করা হয়েছে। অনুগ্রহ করে ${remainingMinutes} মিনিট পর চেষ্টা করুন।`
+          : `Access locked due to multiple failed attempts. Please try again in ${remainingMinutes} min.`
+      };
+    }
+
+    const envEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'masumbilla03627@gmail.com').trim().toLowerCase();
+    const envPassword = (import.meta.env.VITE_ADMIN_PASSWORD || 'Gramerhat099665511').trim();
 
     let isAuthorized = false;
-    const assignedRole: 'admin' | 'moderator' = requestedRole;
+    let assignedRole: 'admin' | 'moderator' = requestedRole;
+    let userName = 'Super Admin';
+    let userEmail: string | undefined = undefined;
 
-    if (requestedRole === 'admin') {
-      if (cleanPin === effectiveAdminPin) {
-        isAuthorized = true;
+    if (typeof credentials === 'object') {
+      const { email, password, pin, role } = credentials;
+      if (email && password) {
+        if (email.trim().toLowerCase() === envEmail && password.trim() === envPassword) {
+          isAuthorized = true;
+          assignedRole = 'admin';
+          userName = 'Masum Billa (Main Admin)';
+          userEmail = envEmail;
+        }
+      } else if (pin) {
+        const cleanPin = pin.trim();
+        const effectiveAdminPin = siteSettings.admin_pin || 'admin123';
+        const effectiveModPin = siteSettings.moderator_pin || 'mod123';
+
+        if (role === 'admin' && cleanPin === effectiveAdminPin) {
+          isAuthorized = true;
+          assignedRole = 'admin';
+          userName = 'Super Admin';
+        } else if (role === 'moderator' && (cleanPin === effectiveModPin || cleanPin === effectiveAdminPin)) {
+          isAuthorized = true;
+          assignedRole = 'moderator';
+          userName = 'Content Moderator';
+        } else if (!role && cleanPin === effectiveAdminPin) {
+          isAuthorized = true;
+          assignedRole = 'admin';
+          userName = 'Super Admin';
+        } else if (!role && cleanPin === effectiveModPin) {
+          isAuthorized = true;
+          assignedRole = 'moderator';
+          userName = 'Content Moderator';
+        }
       }
     } else {
-      if (cleanPin === effectiveModPin || cleanPin === effectiveAdminPin) {
+      const cleanPin = (credentials || '').trim();
+      const effectiveAdminPin = siteSettings.admin_pin || 'admin123';
+      const effectiveModPin = siteSettings.moderator_pin || 'mod123';
+
+      if (requestedRole === 'admin' && cleanPin === effectiveAdminPin) {
         isAuthorized = true;
+        assignedRole = 'admin';
+        userName = 'Super Admin';
+      } else if (cleanPin === effectiveModPin || cleanPin === effectiveAdminPin) {
+        isAuthorized = true;
+        assignedRole = requestedRole;
+        userName = requestedRole === 'admin' ? 'Super Admin' : 'Content Moderator';
       }
     }
 
     if (isAuthorized) {
+      // Clear failed attempts upon successful login
+      localStorage.removeItem('gh_admin_failed_attempts');
+      localStorage.removeItem('gh_admin_lockout_until');
+
       const newAuth: AdminAuth = {
         isAuthenticated: true,
         role: assignedRole,
-        userName: assignedRole === 'admin' ? 'Super Admin' : 'Content Moderator',
+        userName,
         loginTime: Date.now(),
+        email: userEmail,
       };
       setAdminAuth(newAuth);
       sessionStorage.setItem('gh_admin_auth', JSON.stringify(newAuth));
@@ -376,12 +464,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: true, message: 'Authorized' };
     }
 
+    // Record failed attempt
+    const currentAttempts = Number(localStorage.getItem('gh_admin_failed_attempts') || '0') + 1;
+    localStorage.setItem('gh_admin_failed_attempts', String(currentAttempts));
+    if (currentAttempts >= 5) {
+      const lockTime = Date.now() + 5 * 60 * 1000;
+      localStorage.setItem('gh_admin_lockout_until', String(lockTime));
+      return {
+        success: false,
+        message: language === 'bn'
+          ? '৫ বার ভুল চেষ্টা করা হয়েছে। নিরাপত্তার স্বার্থে সিএমএস ৫ মিনিটের জন্য লক করা হলো।'
+          : '5 failed attempts reached. CMS locked for 5 minutes for security.'
+      };
+    }
+
     return {
       success: false,
       message:
         language === 'bn'
-          ? 'দুঃখিত, সিকিউরিটি পিন সঠিক নয়! অনুগ্রহ করে সঠিক পিন কোড দিন।'
-          : 'Incorrect Security PIN code! Access denied.',
+          ? `লগইন তথ্য সঠিক নয়! আর ${5 - currentAttempts} বার চেষ্টা করতে পারবেন।`
+          : `Invalid login credentials! ${5 - currentAttempts} attempts remaining.`,
     };
   };
 
@@ -437,6 +539,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addNewProduct,
         updateProduct,
         deleteProduct,
+        addCategory,
+        updateCategory,
+        deleteCategory,
         adminAuth,
         loginAdmin,
         logoutAdmin,
