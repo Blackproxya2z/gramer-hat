@@ -25,8 +25,6 @@ interface StoreContextType {
   
   viewMode: 'store' | 'admin';
   setViewMode: (mode: 'store' | 'admin') => void;
-  isMobileFrame: boolean;
-  setIsMobileFrame: (val: boolean) => void;
   
   categories: Category[];
   products: Product[];
@@ -90,7 +88,6 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('bn');
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
-  const [isMobileFrame, setIsMobileFrame] = useState<boolean>(false);
   
   const [categories, setCategories] = useState<Category[]>(() => {
     const saved = localStorage.getItem('gh_categories');
@@ -502,8 +499,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         t,
         viewMode,
         setViewMode,
-        isMobileFrame,
-        setIsMobileFrame,
         categories,
         products,
         activeCategory,

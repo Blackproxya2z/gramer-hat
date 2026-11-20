@@ -19,8 +19,6 @@ const MainApp: React.FC = () => {
   const { 
     viewMode, 
     setViewMode,
-    isMobileFrame, 
-    setIsMobileFrame, 
     products, 
     categories,
     activeCategory, 
@@ -121,7 +119,7 @@ const MainApp: React.FC = () => {
             <CategoryFilter />
 
             {/* Dynamic Product Catalog Section (Responsive to Category Menu & Search) */}
-            <section id="products-catalog" className="relative bg-white py-12 sm:py-16 border-b border-[#e5e7eb] scroll-mt-24 overflow-hidden">
+            <section id="products-catalog" className="relative bg-white py-8 sm:py-16 border-b border-[#e5e7eb] scroll-mt-24 overflow-hidden">
               {/* Subtle Animated Agriculture Ambient Glows */}
               <div className="absolute top-10 right-0 w-80 h-80 rounded-full bg-emerald-600/5 blur-3xl pointer-events-none animate-agro-drift"></div>
               <div className="absolute bottom-10 left-0 w-96 h-96 rounded-full bg-amber-500/5 blur-3xl pointer-events-none animate-agro-drift" style={{ animationDelay: '4s' }}></div>
@@ -221,9 +219,9 @@ const MainApp: React.FC = () => {
                   })}
                 </div>
 
-                {/* Product Grid */}
+                {/* Product Grid: 2 columns on mobile, 3 on tablet, 4 on desktop */}
                 {filteredProducts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                     {filteredProducts.map((p) => (
                       <ProductCard key={p.id} product={p} />
                     ))}
@@ -491,40 +489,6 @@ const MainApp: React.FC = () => {
 
     </div>
   );
-
-  // If Mobile Frame mode is enabled, wrap in realistic smartphone frame matching Figma mobile specs (390px)
-  if (isMobileFrame) {
-    return (
-      <div className="min-h-screen bg-gray-900 py-8 px-4 flex flex-col items-center justify-center">
-        <div className="mb-4 flex items-center justify-between w-full max-w-[420px] text-white text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
-            <span className="font-bold">Gramer Hat · Mobile Storefront (390px)</span>
-          </div>
-          <button
-            onClick={() => setIsMobileFrame(false)}
-            className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors cursor-pointer"
-          >
-            <span>Exit Frame ✕</span>
-          </button>
-        </div>
-
-        {/* Smartphone Shell matching 390px Figma width */}
-        <div className="w-[390px] h-[820px] bg-white rounded-[44px] shadow-2xl border-[10px] border-gray-800 overflow-hidden relative flex flex-col">
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-50 flex items-center justify-center pointer-events-none">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#1a1a1a] mr-2"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-[#0a0a0a]"></div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {content}
-          </div>
-
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-gray-400 rounded-full z-50 pointer-events-none"></div>
-        </div>
-      </div>
-    );
-  }
 
   return content;
 };

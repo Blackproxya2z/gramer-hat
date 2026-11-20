@@ -2,9 +2,9 @@ import React from 'react';
 
 export const TrustBadges: React.FC = () => {
   return (
-    <section className="bg-white border-b border-[#e5e7eb] py-6 sm:py-7">
+    <section className="bg-white border-b border-[#e5e7eb] py-4 sm:py-7">
       <div className="max-w-7xl mx-auto px-4 sm:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-8">
           
           {/* 1. Thoughtfully Sourced (Node 2:72 in Figma) */}
           <div className="flex items-start gap-3.5">

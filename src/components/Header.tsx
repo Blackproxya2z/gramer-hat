@@ -48,8 +48,6 @@ export const Header: React.FC = () => {
     setIsTrackingOpen, 
     viewMode, 
     setViewMode,
-    isMobileFrame, 
-    setIsMobileFrame, 
     searchQuery, 
     setSearchQuery, 
     siteSettings,
@@ -175,15 +173,6 @@ export const Header: React.FC = () => {
             >
               <span>SINI IT →</span>
             </a>
-
-            {/* Mobile PWA Sim */}
-            <button
-              onClick={() => setIsMobileFrame(!isMobileFrame)}
-              className="px-2 py-1 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer hidden sm:block"
-              title="Toggle Mobile PWA View"
-            >
-              App View
-            </button>
 
             {/* Figma Shopping Cart */}
             <button
